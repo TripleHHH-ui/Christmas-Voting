@@ -85,16 +85,31 @@ document.addEventListener('DOMContentLoaded', () => {
     voterSearch.value = '';
     renderVoterList('');
     showStep('voter');
+    voterSearch.focus({ preventScroll: true });
   });
 
   // ---- Step 1: pick voter ----
   const voterSearch = document.getElementById('voterSearch');
   const voterListEl = document.getElementById('voterList');
 
+  // Every word typed must appear somewhere in the name (any order, any case),
+  // so "tan brenda" finds "Brenda Tan".
+  function nameMatches(name, query) {
+    const hay = name.toLowerCase();
+    return query.toLowerCase().split(/\s+/).filter(Boolean).every(tok => hay.includes(tok));
+  }
+
+  const MIN_VOTER_CHARS = 2;
+  // The full attendee list is deliberately NOT shown here: guests type their name and
+  // only the matching names appear.
   function renderVoterList(query) {
-    const q = query.trim().toLowerCase();
-    const matches = ATTENDEES.filter(n => n.toLowerCase().includes(q));
     voterListEl.innerHTML = '';
+    const q = query.trim();
+    if (q.length < MIN_VOTER_CHARS) {
+      voterListEl.innerHTML = `<p class="muted center">Type at least ${MIN_VOTER_CHARS} letters of your name to find it.</p>`;
+      return;
+    }
+    const matches = ATTENDEES.filter(n => nameMatches(n, q));
     matches.forEach(name => {
       const card = document.createElement('div');
       card.className = 'name-card';
@@ -103,7 +118,7 @@ document.addEventListener('DOMContentLoaded', () => {
       voterListEl.appendChild(card);
     });
     if (matches.length === 0) {
-      voterListEl.innerHTML = '<p class="muted center">No names match.</p>';
+      voterListEl.innerHTML = '<p class="muted center">No names match. Check the spelling, or ask the organiser.</p>';
     }
   }
   voterSearch.addEventListener('input', () => renderVoterList(voterSearch.value));
@@ -126,6 +141,7 @@ document.addEventListener('DOMContentLoaded', () => {
     voterSearch.value = '';
     renderVoterList('');
     showStep('voter');
+    voterSearch.focus({ preventScroll: true });
   });
 
   // ---- Step 2: rank candidates ----
@@ -137,7 +153,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
   function renderCandList(query) {
     const q = query.trim().toLowerCase();
-    const matches = ATTENDEES.filter(n => n.toLowerCase().includes(q));
+    const matches = ATTENDEES.filter(n => nameMatches(n, q));
     candListEl.innerHTML = '';
     matches.forEach(name => {
       const isSelf = name === state.voter;

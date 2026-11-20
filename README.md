@@ -67,6 +67,7 @@ Sentosa) Best Dressed ranked-choice voting app.
 `ORGANISER_PIN=XXXX node server.js` then open http://localhost:3000. On Railway: `npm start`, env `ORGANISER_PIN` + `DATA_DIR=/data`, volume mounted at `/data`.
 
 ## Changelog (most recent first)
+- "Who are you?" no longer lists everyone: guests type at least 2 letters and only matching names appear (each typed word must match, any order/case). The search box is focused automatically.
 - New festive header emblem (`emblem.svg`) on the voting, QR, results and reveal pages.
 - Voting deadline (8:30 PM SGT on 3 Dec 2026): shown on the welcome screen, enforced by the server, configurable via `VOTING_DEADLINE`.
 - Top 3 reveal moved out of the results page into its own full-screen page (`reveal.html`, opens in a new tab); added shared `scoring.js`; reveal ends with a podium and supports Space/→.
