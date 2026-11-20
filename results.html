@@ -26,10 +26,35 @@
   <!-- Main dashboard -->
   <section id="dashboard">
     <div class="stat-row">
-      <div class="stat"><span class="num" id="statVoters">0</span><span class="lbl">Voters so far</span></div>
+      <button type="button" class="stat stat-btn" id="btnStatVoters" title="Tap to see who has voted">
+        <span class="num" id="statVoters">0</span><span class="lbl">Voters so far</span><span class="stat-hint">tap to see who</span>
+      </button>
       <div class="stat"><span class="num" id="statTotal">44</span><span class="lbl">Total attendees</span></div>
-      <div class="stat"><span class="num" id="statRemaining">44</span><span class="lbl">Remaining</span></div>
+      <button type="button" class="stat stat-btn" id="btnStatRemaining" title="Tap to see who has not voted yet">
+        <span class="num" id="statRemaining">44</span><span class="lbl">Remaining</span><span class="stat-hint">tap to see who</span>
+      </button>
     </div>
+
+    <!-- Who has / hasn't voted (names only; needs the organiser PIN) -->
+    <section id="votersPanel" class="card deco-frame" hidden>
+      <div class="panel-head">
+        <h2 class="display card-title" id="votersTitle">Haven't voted yet</h2>
+        <button type="button" class="btn btn-secondary btn-sm" id="btnVotersClose">Close</button>
+      </div>
+      <form id="votersPinForm" class="voters-pin" autocomplete="off">
+        <p class="muted center">Enter the organiser PIN to see names.</p>
+        <input type="password" id="votersPinInput" class="search-box" placeholder="Organiser PIN" inputmode="numeric" autocomplete="off" />
+        <button type="submit" class="btn btn-primary btn-sm">Show names</button>
+      </form>
+      <div id="votersBody" hidden>
+        <div class="voters-tools">
+          <span class="muted" id="votersCount"></span>
+          <button type="button" class="btn btn-secondary btn-sm" id="btnVotersCopy">Copy names</button>
+        </div>
+        <div id="votersList" class="chip-list"></div>
+      </div>
+      <p id="votersError" class="form-error center" role="alert"></p>
+    </section>
 
     <div class="toolbar">
       <button class="btn btn-secondary btn-sm" id="btnRefresh">↻ Refresh</button>
@@ -39,8 +64,27 @@
     </div>
 
     <div class="card deco-frame">
-      <h2 class="display card-title">Live Leaderboard</h2>
-      <div id="leaderboardWrap" class="table-scroll"></div>
+      <div class="panel-head">
+        <h2 class="display card-title">Live Leaderboard</h2>
+        <span class="live-badge" id="liveBadge" data-state="connecting"><span class="live-dot"></span><span id="liveText">Connecting…</span></span>
+      </div>
+      <div id="liveToast" class="live-toast" role="status" aria-live="polite"></div>
+
+      <!-- Kahoot-style podium for the top 3 places -->
+      <div class="lb-podium" id="lbPodium">
+        <div class="pod pod-2"><div class="pod-names" id="podNames2"></div><div class="pod-col"><span class="pod-badge">2</span><span class="pod-pts" id="podPts2">0</span></div></div>
+        <div class="pod pod-1"><div class="pod-crown" aria-hidden="true">👑</div><div class="pod-names" id="podNames1"></div><div class="pod-col"><span class="pod-badge">1</span><span class="pod-pts" id="podPts1">0</span></div></div>
+        <div class="pod pod-3"><div class="pod-names" id="podNames3"></div><div class="pod-col"><span class="pod-badge">3</span><span class="pod-pts" id="podPts3">0</span></div></div>
+      </div>
+      <p class="muted center lb-empty" id="lbEmpty">Waiting for the first vote… 🗳️</p>
+
+      <!-- Everyone else who has points, with animated re-ordering -->
+      <div class="lb-list" id="lbList"></div>
+
+      <div class="center" style="margin-top:12px;">
+        <button type="button" class="btn btn-secondary btn-sm" id="btnToggleTable">Show full table</button>
+      </div>
+      <div id="leaderboardWrap" class="table-scroll" hidden></div>
     </div>
   </section>
 

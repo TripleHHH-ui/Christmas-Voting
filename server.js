@@ -71,6 +71,31 @@ function saveStore() {
 
 loadStore();
 
+// ---- Live updates (Server-Sent Events) ----
+// The public totals only; the same payload as GET /api/votes/results. Never individual ballots.
+function resultsPayload() {
+  return {
+    leaderboard: shared.computeLeaderboard(store.votes),
+    voterCount: Object.keys(store.votes).length,
+    updatedAt: store.updatedAt
+  };
+}
+const streamClients = new Set();
+const MAX_STREAM_CLIENTS = 300;
+function broadcast() {
+  if (streamClients.size === 0) return;
+  const msg = 'event: update\ndata: ' + JSON.stringify(resultsPayload()) + '\n\n';
+  for (const client of streamClients) {
+    try { client.write(msg); } catch (_) { streamClients.delete(client); }
+  }
+}
+// Keep idle connections alive through proxies.
+setInterval(() => {
+  for (const client of streamClients) {
+    try { client.write(': ping\n\n'); } catch (_) { streamClients.delete(client); }
+  }
+}, 20000).unref();
+
 // ---- Helpers ----
 function sha(s) { return crypto.createHash('sha256').update(String(s)).digest(); }
 function pinMatches(candidate) {
@@ -187,11 +212,36 @@ async function handleApi(req, res, op) {
   // Public (no PIN): leaderboard TOTALS for the results page. Individual ballots (who voted for
   // whom) are never included; they stay behind the organiser PIN at /api/votes/state.
   if (op === 'results' && req.method === 'GET') {
-    return sendJson(res, 200, {
-      leaderboard: shared.computeLeaderboard(store.votes),
-      voterCount: Object.keys(store.votes).length,
-      updatedAt: store.updatedAt
+    return sendJson(res, 200, resultsPayload());
+  }
+
+  // Public (no PIN): live push of the same totals. The page keeps this connection open and gets an
+  // "update" event the moment a vote is submitted or the votes are reset.
+  if (op === 'stream' && req.method === 'GET') {
+    if (streamClients.size >= MAX_STREAM_CLIENTS) {
+      return sendJson(res, 503, { error: 'Too many live viewers right now.' });
+    }
+    res.writeHead(200, {
+      'Content-Type': 'text/event-stream; charset=utf-8',
+      'Cache-Control': 'no-cache, no-transform',
+      'Connection': 'keep-alive',
+      'X-Accel-Buffering': 'no',
+      'X-Content-Type-Options': 'nosniff'
     });
+    res.write('retry: 3000\n');
+    res.write('event: update\ndata: ' + JSON.stringify(resultsPayload()) + '\n\n');
+    streamClients.add(res);
+    req.on('close', () => streamClients.delete(res));
+    return;
+  }
+
+  // PIN-protected: names only (who has / has not voted), never what they voted.
+  if (op === 'voters' && req.method === 'GET') {
+    if (!requirePin(req, res)) return;
+    const voted = Object.keys(store.votes).sort((a, b) => a.localeCompare(b));
+    const votedSet = new Set(voted);
+    const notVoted = ATTENDEES.filter(n => !votedSet.has(n)).sort((a, b) => a.localeCompare(b));
+    return sendJson(res, 200, { voted, notVoted, total: ATTENDEES.length });
   }
 
   // Public (no PIN): ONLY the Top 3 names + points, for the reveal page. The full leaderboard,
@@ -214,7 +264,9 @@ async function handleApi(req, res, op) {
     }
     store.votes[body.voter] = body.picks.slice();
     saveStore();
-    return sendJson(res, 200, { ok: true });
+    sendJson(res, 200, { ok: true });
+    try { broadcast(); } catch (e) { console.error('broadcast failed:', e); }   // push to live leaderboards
+    return;
   }
 
   if (op === 'reset' && req.method === 'POST') {
@@ -223,10 +275,12 @@ async function handleApi(req, res, op) {
     if (body.confirm !== 'RESET') return sendJson(res, 400, { error: 'Missing RESET confirmation.' });
     store = { votes: {}, updatedAt: null };
     saveStore();
-    return sendJson(res, 200, { ok: true });
+    sendJson(res, 200, { ok: true });
+    try { broadcast(); } catch (e) { console.error('broadcast failed:', e); }
+    return;
   }
 
-  if (op === 'state' || op === 'submit' || op === 'reset' || op === 'config' || op === 'reveal' || op === 'results') {
+  if (op === 'state' || op === 'submit' || op === 'reset' || op === 'config' || op === 'reveal' || op === 'results' || op === 'stream' || op === 'voters') {
     return sendJson(res, 405, { error: 'Method not allowed.' });
   }
   return sendJson(res, 404, { error: 'Not found.' });

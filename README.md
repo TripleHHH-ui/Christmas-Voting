@@ -12,7 +12,7 @@ Sentosa) Best Dressed ranked-choice voting app.
   Already-voted is remembered locally (`localStorage`) AND must be enforced server-side too.
 - `qr.html` — landing page (`/`): the "Scan to Vote" QR screen, with an organiser link to results. QR generated fully in-browser via `qrcodejs`
   (cdnjs), pointing at `index.html` on the same origin. No external QR API.
-- `results.html` / `results.js` — live results dashboard (no PIN screen; it only receives totals, never who voted for whom). Only "Reset All Votes" asks for the organiser PIN. Live leaderboard
+- `results.html` / `results.js` — live results dashboard: Kahoot-style podium (top 3 pillars) + animated ranked rows, updated instantly over a Server-Sent-Events stream (`GET /api/votes/stream`) with polling as a fallback; tap "Voters so far" / "Remaining" to see names (PIN). (no PIN screen; it only receives totals, never who voted for whom). Only "Reset All Votes" asks for the organiser PIN. Live leaderboard
   sorted by points, tie-break by 1st then 2nd place picks (shared place highlighted with a
   dashed outline + "(tie)" label), voter count out of 44, CSV export, a "Launch Top 3 Reveal" button that opens the reveal in a new tab,
   and a type-RESET-to-confirm vote reset.
@@ -42,9 +42,9 @@ Sentosa) Best Dressed ranked-choice voting app.
   source of truth is the server per spec.
 - Backend: `server.js` (zero-dependency Node) serves the site and implements the API that
   `storage.js` calls. Public (no PIN): `GET /api/votes/results` (leaderboard totals only),
-  `GET /api/votes/reveal` (Top 3 only), `GET /api/votes/config` (deadline) and
+  `GET /api/votes/reveal` (Top 3 only), `GET /api/votes/stream` (live push of the totals), `GET /api/votes/config` (deadline) and
   `POST /api/votes/submit {voter, picks}`. PIN-protected (`X-Organiser-Pin` header):
-  `GET /api/votes/state` (the raw ballots, who voted for whom) and `POST /api/votes/reset`. The
+  `GET /api/votes/state` (the raw ballots), `GET /api/votes/voters` (names of who has / has not voted) and `POST /api/votes/reset`. The
   server validates every vote against `data.js` (known voter, 1-3 distinct known picks, no
   self-vote, one vote per name) and rate-limits wrong PIN guesses. If the API is missing, the
   app shows a "shared storage unavailable" error rather than silently using `localStorage`.
@@ -69,6 +69,7 @@ Sentosa) Best Dressed ranked-choice voting app.
 `ORGANISER_PIN=XXXX node server.js` then open http://localhost:3000. On Railway: `npm start`, env `ORGANISER_PIN` + `DATA_DIR=/data`, volume mounted at `/data`.
 
 ## Changelog (most recent first)
+- Live leaderboard is now truly live (server pushes an update the moment a vote is submitted or reset) and Kahoot-style: podium, animated re-ordering, point count-ups, rank-movement arrows, "new vote" / "takes the lead" toasts, LIVE badge, optional full table. Tapping "Remaining" / "Voters so far" lists who has / has not voted (names only, needs the PIN, via `GET /api/votes/voters`).
 - Results page no longer has the "Enter PIN" screen: it reads public totals from `GET /api/votes/results` (individual ballots stay private behind the PIN). "Reset All Votes" still asks for the organiser PIN inside the reset box.
 - Reveal page no longer asks for the PIN. It uses a new public endpoint `GET /api/votes/reveal` that returns only the Top 3 names + points (computed on the server with the shared `scoring.js`); the full results, who-voted-for-whom and reset still need the organiser PIN.
 - "Who are you?" no longer lists everyone: guests type at least 2 letters and only matching names appear (each typed word must match, any order/case). The search box is focused automatically.

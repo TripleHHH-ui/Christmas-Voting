@@ -69,6 +69,10 @@ const VoteStorage = (() => {
     async getResults() {
       return call('results');
     },
+    // PIN-protected: { voted: [names], notVoted: [names], total } — names only, never what they voted.
+    async getVoters(pin) {
+      return call('voters', { headers: { 'X-Organiser-Pin': pin || '' } });
+    },
     // Public (no PIN): only the Top 3 groups [[{name, points, place}, ...tied], ...] in reveal order.
     async getReveal() {
       return call('reveal');
