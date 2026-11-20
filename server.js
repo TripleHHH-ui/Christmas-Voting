@@ -188,7 +188,7 @@ async function handleApi(req, res, op) {
 
 // ---- Static files (whitelist, so server.js / data/ / package.json are never exposed) ----
 const STATIC = {
-  '/': 'index.html',
+  '/': 'qr.html',            // landing page = QR code; guests scan it to reach /index.html (voting)
   '/index.html': 'index.html',
   '/qr.html': 'qr.html',
   '/results.html': 'results.html',

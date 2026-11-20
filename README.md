@@ -6,11 +6,11 @@ KPF Singapore Christmas Party "Golden Hour, Midnight Glamour" (3 Dec 2026, Bedro
 Sentosa) Best Dressed ranked-choice voting app.
 
 ## Files
-- `index.html` / `app.js` — guest voting flow: welcome + judging tips, pick own name (search,
+- `index.html` / `app.js` — guest voting flow (reached by scanning the QR, at `/index.html`): welcome + judging tips, pick own name (search,
   no free typing), rank 1–3 candidates (tap order sets rank, up/down/remove controls, self
   blocked with note), review with gold rank badges, submit, confetti/snow confirmation screen.
   Already-voted is remembered locally (`localStorage`) AND must be enforced server-side too.
-- `qr.html` — organiser "Show QR" screen. QR generated fully in-browser via `qrcodejs`
+- `qr.html` — landing page (`/`): the "Scan to Vote" QR screen, with an organiser link to results. QR generated fully in-browser via `qrcodejs`
   (cdnjs), pointing at `index.html` on the same origin. No external QR API.
 - `results.html` / `results.js` — PIN-gated organiser dashboard (PIN checked by the server): live leaderboard
   sorted by points, tie-break by 1st then 2nd place picks (shared place highlighted with a
