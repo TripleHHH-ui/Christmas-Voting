@@ -59,7 +59,7 @@ Sentosa) Best Dressed ranked-choice voting app.
 - Reveal order logic (3rd→2nd→1st) is in the `btnReveal` handler in `results.js`.
 
 ## Run locally / deploy
-`ORGANISER_PIN=1234 node server.js` then open http://localhost:3000. On Railway: `npm start`, env `ORGANISER_PIN` + `DATA_DIR=/data`, volume mounted at `/data`.
+`ORGANISER_PIN=XXXX node server.js` then open http://localhost:3000. On Railway: `npm start`, env `ORGANISER_PIN` + `DATA_DIR=/data`, volume mounted at `/data`.
 
 ## Changelog (most recent first)
 - Light theme (cream background, dark-gold text, cool-grey snow) + bug-fix pass:
