@@ -1,0 +1,44 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Show QR — Golden Hour, Midnight Glamour</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@600;700&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="style.css" />
+<script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+</head>
+<body>
+<div class="container wide center">
+  <div class="fan"></div>
+  <span class="holly">🎄✨🎄</span>
+  <h1 class="display">Golden Hour, Midnight Glamour</h1>
+  <div class="sub muted">KPF Singapore Christmas Party</div>
+  <div class="sub muted">3 December 2026 · 6–9 PM · Bedrock Origin, Sentosa</div>
+
+  <div class="card deco-frame" style="margin-top:24px;">
+    <h2 class="display" style="color:var(--gold-light)">Scan to Vote for Best Dressed</h2>
+    <div class="qr-wrap"><div id="qrcode"></div></div>
+    <p class="muted" id="urlDisplay" style="word-break:break-all;"></p>
+  </div>
+</div>
+<script src="fx.js"></script>
+<script>
+  document.addEventListener('DOMContentLoaded', () => {
+    initFx();
+    const url = new URL('index.html', window.location.href).href;
+    document.getElementById('urlDisplay').textContent = url;
+    new QRCode(document.getElementById('qrcode'), {
+      text: url,
+      width: 280,
+      height: 280,
+      colorDark: '#0b0f1f',
+      colorLight: '#f3eee3',
+      correctLevel: QRCode.CorrectLevel.H
+    });
+  });
+</script>
+</body>
+</html>

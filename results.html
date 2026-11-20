@@ -1,0 +1,79 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Results — Golden Hour, Midnight Glamour</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@600;700&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="style.css" />
+</head>
+<body>
+<div class="container wide">
+  <div class="title-block">
+    <div class="fan"></div>
+    <h1 class="display">Results &amp; Reveal</h1>
+    <div class="sub muted">Organiser only</div>
+  </div>
+
+  <div id="errorArea"></div>
+
+  <!-- PIN gate -->
+  <section id="pinGate" class="card deco-frame">
+    <h2 class="display center" style="color:var(--gold-light)">Enter PIN</h2>
+    <p class="muted center">Results are visible to the organiser only.</p>
+    <input type="password" id="pinInput" class="search-box center" placeholder="4-digit PIN" inputmode="numeric" maxlength="4" style="text-align:center; letter-spacing:6px; font-size:1.3rem;" />
+    <button class="btn btn-primary" id="btnPinSubmit">Unlock Results</button>
+    <p id="pinError" class="muted center" style="color:#ffb3bd;"></p>
+  </section>
+
+  <!-- Main dashboard -->
+  <section id="dashboard" hidden>
+    <div class="stat-row">
+      <div class="stat"><span class="num" id="statVoters">0</span><span class="lbl">Voters so far</span></div>
+      <div class="stat"><span class="num" id="statTotal">44</span><span class="lbl">Total attendees</span></div>
+      <div class="stat"><span class="num" id="statRemaining">44</span><span class="lbl">Remaining</span></div>
+    </div>
+
+    <div class="toolbar">
+      <button class="btn btn-secondary btn-sm" id="btnRefresh">↻ Refresh</button>
+      <button class="btn btn-secondary btn-sm" id="btnExport">⬇ Export CSV</button>
+      <button class="btn btn-secondary btn-sm" id="btnReveal">🎉 Launch Top 3 Reveal</button>
+      <button class="btn btn-danger btn-sm" id="btnResetOpen">⚠ Reset All Votes</button>
+    </div>
+
+    <div class="card deco-frame">
+      <h2 class="display" style="color:var(--gold-light)">Live Leaderboard</h2>
+      <div id="leaderboardWrap"></div>
+    </div>
+  </section>
+
+  <!-- Reveal overlay -->
+  <section id="revealOverlay" class="card deco-frame" hidden>
+    <div class="reveal-stage">
+      <div class="rank-label" id="revealLabel">Get ready…</div>
+      <div class="winner-name" id="revealName">&nbsp;</div>
+      <div class="winner-pts" id="revealPts"></div>
+    </div>
+    <div style="display:flex; gap:10px; justify-content:center;">
+      <button class="btn btn-primary btn-sm" id="btnRevealNext">Reveal Next 🎄</button>
+      <button class="btn btn-secondary btn-sm" id="btnRevealClose">Close Reveal</button>
+    </div>
+  </section>
+
+  <!-- Reset confirm modal -->
+  <section id="resetModal" class="card deco-frame" hidden>
+    <h2 class="display center" style="color:var(--gold-light)">Reset All Votes?</h2>
+    <p class="muted center">This permanently clears every vote. Type RESET to confirm.</p>
+    <input type="text" id="resetConfirmInput" class="search-box" placeholder="Type RESET" />
+    <button class="btn btn-danger" id="btnResetConfirm">Confirm Reset</button>
+    <button class="btn btn-secondary" id="btnResetCancel" style="margin-top:10px;">Cancel</button>
+  </section>
+</div>
+<script src="data.js"></script>
+<script src="fx.js"></script>
+<script src="storage.js"></script>
+<script src="results.js"></script>
+</body>
+</html>

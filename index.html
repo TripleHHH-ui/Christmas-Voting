@@ -1,0 +1,93 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Golden Hour, Midnight Glamour — Vote for Best Dressed</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@600;700&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="style.css" />
+</head>
+<body>
+<div class="container">
+
+  <div class="title-block">
+    <div class="fan"></div>
+    <span class="holly">🎄✨🎄</span>
+    <h1 class="display">Golden Hour, Midnight Glamour</h1>
+    <div class="sub">KPF Singapore Christmas Party · 3 Dec 2026, 6–9 PM · Bedrock Origin, Sentosa</div>
+    <div class="pill-row">
+      <span class="pill">Best Dressed Vote</span>
+    </div>
+  </div>
+
+  <div id="errorArea"></div>
+
+  <!-- STEP 0: Welcome -->
+  <section id="step-welcome" class="card deco-frame">
+    <h2 class="display center" style="color:var(--gold-light)">Welcome, Darling ✨</h2>
+    <p class="muted center">Before you vote, here's your judging inspiration for the night:</p>
+    <div class="criteria">
+      <div class="criterion">
+        <span class="icon">✨</span>
+        <div><strong>Sparkle &amp; Shine</strong><span class="desc">Glamour, shimmer and festive radiance.</span></div>
+      </div>
+      <div class="criterion">
+        <span class="icon">🕰️</span>
+        <div><strong>Dress the Era</strong><span class="desc">Art Deco elegance meets midnight glamour.</span></div>
+      </div>
+      <div class="criterion">
+        <span class="icon">💎</span>
+        <div><strong>Accessorise the Era</strong><span class="desc">Jewels, gloves, hats — the finishing touch.</span></div>
+      </div>
+    </div>
+    <div class="scoring-note">
+      Rank your top 3: <strong>1st = 3 pts · 2nd = 2 pts · 3rd = 1 pt</strong>
+    </div>
+    <button class="btn btn-primary" id="btnStart">I'm Ready to Vote 🎅</button>
+  </section>
+
+  <!-- STEP 1: Identify voter -->
+  <section id="step-voter" class="card deco-frame" hidden>
+    <h2 class="display center" style="color:var(--gold-light)">Who are you?</h2>
+    <p class="muted center">Search and select your own name.</p>
+    <input type="text" id="voterSearch" class="search-box" placeholder="Type your name…" />
+    <div id="voterList" class="list"></div>
+  </section>
+
+  <!-- STEP 2: Rank candidates -->
+  <section id="step-rank" class="card deco-frame" hidden>
+    <h2 class="display center" style="color:var(--gold-light)">Pick Best Dressed</h2>
+    <p class="muted center">Tap up to 3 people, in order. First tap = 1st place.</p>
+    <div id="selfNote" class="scoring-note" hidden>You can't vote for yourself — your name is greyed out below.</div>
+    <input type="text" id="candSearch" class="search-box" placeholder="Search attendees…" />
+    <div id="candList" class="list"></div>
+  </section>
+
+  <!-- STEP 3: Review -->
+  <section id="step-review" class="card deco-frame" hidden>
+    <h2 class="display center" style="color:var(--gold-light)">Review Your Picks</h2>
+    <div id="reviewVoter" class="center muted" style="margin-bottom:10px;"></div>
+    <div id="reviewList"></div>
+    <button class="btn btn-primary" id="btnSubmit" style="margin-top:14px;">Submit Vote 🎁</button>
+    <button class="btn btn-secondary" id="btnBackToRank" style="margin-top:10px;">Back to Edit Picks</button>
+  </section>
+
+  <!-- STEP 4: Confirmation -->
+  <section id="step-confirm" class="confirm-screen" hidden>
+    <div class="big-holly">🎄✨🎉</div>
+    <h2>Vote submitted, Merry Christmas!</h2>
+    <p class="muted">Thank you for voting at Golden Hour, Midnight Glamour.</p>
+  </section>
+
+  <!-- Nav controls shared -->
+  <div id="navArea" style="margin-top:10px;"></div>
+
+</div>
+<script src="data.js"></script>
+<script src="fx.js"></script>
+<script src="storage.js"></script>
+<script src="app.js"></script>
+</body>
+</html>
