@@ -194,9 +194,6 @@ document.addEventListener('DOMContentLoaded', () => {
       return;
     }
     clearError();
-    // Hand the PIN to the new tab (sessionStorage is copied to tabs opened with window.open).
-    // If the browser doesn't copy it, the reveal page simply asks for the PIN itself.
-    try { sessionStorage.setItem('ghmg_organiser_pin', pin); } catch (_) { /* reveal page will ask */ }
     const tab = window.open('reveal.html', '_blank');
     if (!tab) {
       showError('Your browser blocked the new tab.', 'Allow pop-ups for this site, or open /reveal.html yourself.');

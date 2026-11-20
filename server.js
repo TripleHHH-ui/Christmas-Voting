@@ -36,10 +36,13 @@ if (!process.env.ORGANISER_PIN) {
   console.warn('WARNING: ORGANISER_PIN is not set, falling back to the default PIN.');
 }
 
-// ---- Attendee list: data.js is the single source of truth (shared with the browser) ----
-const ATTENDEES = vm.runInNewContext(
-  fs.readFileSync(path.join(__dirname, 'data.js'), 'utf8') + '\n;ATTENDEES;', {}
+// ---- Attendee list + scoring: data.js and scoring.js are shared with the browser ----
+const shared = vm.runInNewContext(
+  fs.readFileSync(path.join(__dirname, 'data.js'), 'utf8') + '\n' +
+  fs.readFileSync(path.join(__dirname, 'scoring.js'), 'utf8') + '\n;({ ATTENDEES, computeLeaderboard, buildRevealQueue });',
+  {}
 );
+const ATTENDEES = shared.ATTENDEES;
 const ATTENDEE_SET = new Set(ATTENDEES);
 
 // ---- Persistent store ----
@@ -181,6 +184,14 @@ async function handleApi(req, res, op) {
     });
   }
 
+  // Public (no PIN): ONLY the Top 3 names + points, for the reveal page. The full leaderboard,
+  // who-voted-for-whom and reset all stay behind the organiser PIN.
+  if (op === 'reveal' && req.method === 'GET') {
+    const board = shared.computeLeaderboard(store.votes);
+    const groups = shared.buildRevealQueue(board).map(g => g.map(r => ({ name: r.name, points: r.points, place: r.place })));
+    return sendJson(res, 200, { groups, voterCount: Object.keys(store.votes).length });
+  }
+
   if (op === 'submit' && req.method === 'POST') {
     if (votingClosed()) {
       return sendJson(res, 403, { error: `Voting has closed (it ended at ${deadlineText()}). Your vote was not recorded.`, closed: true });
@@ -205,7 +216,7 @@ async function handleApi(req, res, op) {
     return sendJson(res, 200, { ok: true });
   }
 
-  if (op === 'state' || op === 'submit' || op === 'reset' || op === 'config') {
+  if (op === 'state' || op === 'submit' || op === 'reset' || op === 'config' || op === 'reveal') {
     return sendJson(res, 405, { error: 'Method not allowed.' });
   }
   return sendJson(res, 404, { error: 'Not found.' });

@@ -2,13 +2,9 @@
 document.addEventListener('DOMContentLoaded', () => {
   initFx();
 
-  const PIN_KEY = 'ghmg_organiser_pin';   // set by results.js, per-tab (sessionStorage)
-  let pin = null;
-  try { pin = sessionStorage.getItem(PIN_KEY); } catch (_) { /* ask for the PIN instead */ }
-
+  // No PIN here: the reveal only ever receives the Top 3 names + points (GET /api/votes/reveal).
   const $ = id => document.getElementById(id);
   const stage = $('stage');
-  const pinGate = $('pinGate');
   const btnNext = $('btnRevealNext');
   const btnRefresh = $('btnRefresh');
 
@@ -21,28 +17,15 @@ document.addEventListener('DOMContentLoaded', () => {
   }
   function clearError() { $('errorArea').innerHTML = ''; }
 
-  function showGate(message) {
-    pin = null;
-    try { sessionStorage.removeItem(PIN_KEY); } catch (_) { /* ignore */ }
-    stage.hidden = true;
-    pinGate.hidden = false;
-    $('pinError').textContent = message || '';
-    $('pinInput').focus();
-  }
-
-  // Returns 'ok' | 'auth' | 'error'
+  // Returns 'ok' | 'error'
   async function load() {
     clearError();
     try {
-      const state = await VoteStorage.getState(pin);
-      queue = buildRevealQueue(computeLeaderboard((state && state.votes) || {}));
+      const data = await VoteStorage.getReveal();
+      queue = Array.isArray(data && data.groups) ? data.groups : [];
       resetStage();
       return 'ok';
     } catch (err) {
-      if (err.status === 401 || err.status === 429) {
-        showGate(err.message);
-        return err.status === 401 ? 'auth' : 'error';
-      }
       if (err instanceof StorageUnavailableError) {
         showError('Shared vote storage is unavailable, so the results cannot be loaded.', err.detail);
       } else {
@@ -81,7 +64,6 @@ document.addEventListener('DOMContentLoaded', () => {
       btnNext.disabled = false;
     }
     renderDots();
-    pinGate.hidden = true;
     stage.hidden = false;
   }
 
@@ -157,28 +139,6 @@ document.addEventListener('DOMContentLoaded', () => {
     setTimeout(() => { window.location.href = 'results.html'; }, 150);
   });
 
-  // ---- PIN gate (fallback when the PIN was not passed from the results page) ----
-  async function unlock() {
-    const val = $('pinInput').value.trim();
-    if (!val) { $('pinError').textContent = 'Enter the PIN.'; return; }
-    const btn = $('btnPinSubmit');
-    btn.disabled = true;
-    pin = val;
-    const result = await load();
-    btn.disabled = false;
-    if (result === 'ok') {
-      try { sessionStorage.setItem(PIN_KEY, pin); } catch (_) { /* ignore */ }
-      $('pinInput').value = '';
-      $('pinError').textContent = '';
-    } else if (result === 'auth') {
-      $('pinError').textContent = 'Incorrect PIN.';
-      $('pinInput').select();
-    }
-  }
-  $('btnPinSubmit').addEventListener('click', unlock);
-  $('pinInput').addEventListener('keydown', e => { if (e.key === 'Enter') unlock(); });
-
   // ---- Start ----
-  if (pin) load();
-  else showGate('');
+  load();
 });

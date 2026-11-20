@@ -65,6 +65,10 @@ const VoteStorage = (() => {
     async getConfig() {
       return call('config');
     },
+    // Public (no PIN): only the Top 3 groups [[{name, points, place}, ...tied], ...] in reveal order.
+    async getReveal() {
+      return call('reveal');
+    },
     // Reading results and resetting require the organiser PIN (checked by the server).
     async getState(pin) {
       return call('state', { headers: { 'X-Organiser-Pin': pin || '' } });

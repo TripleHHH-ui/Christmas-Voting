@@ -16,7 +16,7 @@ Sentosa) Best Dressed ranked-choice voting app.
   sorted by points, tie-break by 1st then 2nd place picks (shared place highlighted with a
   dashed outline + "(tie)" label), voter count out of 44, CSV export, a "Launch Top 3 Reveal" button that opens the reveal in a new tab,
   and a type-RESET-to-confirm vote reset.
-- `reveal.html` / `reveal.js` — full-screen Top 3 reveal page for a projector (opens in its own tab from the results page): 3rd → 2nd → 1st, one tap (button, Space or →) at a time, gold confetti, progress dots, final podium. Gets the PIN from the results tab (sessionStorage) or asks for it.
+- `reveal.html` / `reveal.js` — full-screen Top 3 reveal page for a projector (opens in its own tab from the results page): 3rd → 2nd → 1st, one tap (button, Space or →) at a time, gold confetti, progress dots, final podium. No PIN: it reads only the Top 3 names + points from the public `GET /api/votes/reveal`.
 - `scoring.js` — shared `computeLeaderboard()` (points, tie-break, places) and `buildRevealQueue()`, used by results and reveal pages.
 - `data.js` — the 44-name attendee list (single source of truth for voter + candidate lists) plus the shared `escapeHtml()` helper.
 - `storage.js` — shared same-origin storage client (`VoteStorage`). Calls a same-origin JSON
@@ -67,6 +67,7 @@ Sentosa) Best Dressed ranked-choice voting app.
 `ORGANISER_PIN=XXXX node server.js` then open http://localhost:3000. On Railway: `npm start`, env `ORGANISER_PIN` + `DATA_DIR=/data`, volume mounted at `/data`.
 
 ## Changelog (most recent first)
+- Reveal page no longer asks for the PIN. It uses a new public endpoint `GET /api/votes/reveal` that returns only the Top 3 names + points (computed on the server with the shared `scoring.js`); the full results, who-voted-for-whom and reset still need the organiser PIN.
 - "Who are you?" no longer lists everyone: guests type at least 2 letters and only matching names appear (each typed word must match, any order/case). The search box is focused automatically.
 - New festive header emblem (`emblem.svg`) on the voting, QR, results and reveal pages.
 - Voting deadline (8:30 PM SGT on 3 Dec 2026): shown on the welcome screen, enforced by the server, configurable via `VOTING_DEADLINE`.
