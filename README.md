@@ -12,7 +12,7 @@ Sentosa) Best Dressed ranked-choice voting app.
   Already-voted is remembered locally (`localStorage`) AND must be enforced server-side too.
 - `qr.html` — landing page (`/`): the "Scan to Vote" QR screen, with an organiser link to results. QR generated fully in-browser via `qrcodejs`
   (cdnjs), pointing at `index.html` on the same origin. No external QR API.
-- `results.html` / `results.js` — PIN-gated organiser dashboard (PIN checked by the server): live leaderboard
+- `results.html` / `results.js` — live results dashboard (no PIN screen; it only receives totals, never who voted for whom). Only "Reset All Votes" asks for the organiser PIN. Live leaderboard
   sorted by points, tie-break by 1st then 2nd place picks (shared place highlighted with a
   dashed outline + "(tie)" label), voter count out of 44, CSV export, a "Launch Top 3 Reveal" button that opens the reveal in a new tab,
   and a type-RESET-to-confirm vote reset.
@@ -41,8 +41,10 @@ Sentosa) Best Dressed ranked-choice voting app.
   already in its `votes` map; the client also remembers locally as a fast UX guard, but the
   source of truth is the server per spec.
 - Backend: `server.js` (zero-dependency Node) serves the site and implements the API that
-  `storage.js` calls: `GET /api/votes/state` and `POST /api/votes/reset` (both require the
-  organiser PIN in an `X-Organiser-Pin` header) and `POST /api/votes/submit {voter, picks}`. The
+  `storage.js` calls. Public (no PIN): `GET /api/votes/results` (leaderboard totals only),
+  `GET /api/votes/reveal` (Top 3 only), `GET /api/votes/config` (deadline) and
+  `POST /api/votes/submit {voter, picks}`. PIN-protected (`X-Organiser-Pin` header):
+  `GET /api/votes/state` (the raw ballots, who voted for whom) and `POST /api/votes/reset`. The
   server validates every vote against `data.js` (known voter, 1-3 distinct known picks, no
   self-vote, one vote per name) and rate-limits wrong PIN guesses. If the API is missing, the
   app shows a "shared storage unavailable" error rather than silently using `localStorage`.
@@ -67,6 +69,7 @@ Sentosa) Best Dressed ranked-choice voting app.
 `ORGANISER_PIN=XXXX node server.js` then open http://localhost:3000. On Railway: `npm start`, env `ORGANISER_PIN` + `DATA_DIR=/data`, volume mounted at `/data`.
 
 ## Changelog (most recent first)
+- Results page no longer has the "Enter PIN" screen: it reads public totals from `GET /api/votes/results` (individual ballots stay private behind the PIN). "Reset All Votes" still asks for the organiser PIN inside the reset box.
 - Reveal page no longer asks for the PIN. It uses a new public endpoint `GET /api/votes/reveal` that returns only the Top 3 names + points (computed on the server with the shared `scoring.js`); the full results, who-voted-for-whom and reset still need the organiser PIN.
 - "Who are you?" no longer lists everyone: guests type at least 2 letters and only matching names appear (each typed word must match, any order/case). The search box is focused automatically.
 - New festive header emblem (`emblem.svg`) on the voting, QR, results and reveal pages.

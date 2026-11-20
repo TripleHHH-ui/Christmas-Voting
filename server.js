@@ -184,6 +184,16 @@ async function handleApi(req, res, op) {
     });
   }
 
+  // Public (no PIN): leaderboard TOTALS for the results page. Individual ballots (who voted for
+  // whom) are never included; they stay behind the organiser PIN at /api/votes/state.
+  if (op === 'results' && req.method === 'GET') {
+    return sendJson(res, 200, {
+      leaderboard: shared.computeLeaderboard(store.votes),
+      voterCount: Object.keys(store.votes).length,
+      updatedAt: store.updatedAt
+    });
+  }
+
   // Public (no PIN): ONLY the Top 3 names + points, for the reveal page. The full leaderboard,
   // who-voted-for-whom and reset all stay behind the organiser PIN.
   if (op === 'reveal' && req.method === 'GET') {
@@ -216,7 +226,7 @@ async function handleApi(req, res, op) {
     return sendJson(res, 200, { ok: true });
   }
 
-  if (op === 'state' || op === 'submit' || op === 'reset' || op === 'config' || op === 'reveal') {
+  if (op === 'state' || op === 'submit' || op === 'reset' || op === 'config' || op === 'reveal' || op === 'results') {
     return sendJson(res, 405, { error: 'Method not allowed.' });
   }
   return sendJson(res, 404, { error: 'Not found.' });

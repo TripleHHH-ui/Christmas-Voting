@@ -17,22 +17,14 @@
   <div class="title-block">
     <img class="emblem" src="emblem.svg" alt="Festive Art Deco emblem with Christmas trees" />
     <h1 class="display">Results &amp; Reveal</h1>
-    <div class="sub muted">Organiser only · <a href="qr.html">← Back to QR code</a></div>
+    <div class="sub muted">Live results · <a href="qr.html">← Back to QR code</a></div>
   </div>
 
   <div id="errorArea"></div>
 
-  <!-- PIN gate -->
-  <section id="pinGate" class="card deco-frame">
-    <h2 class="display center card-title">Enter PIN</h2>
-    <p class="muted center">Results are visible to the organiser only.</p>
-    <input type="password" id="pinInput" class="search-box center" placeholder="4-digit PIN" inputmode="numeric" maxlength="4" style="text-align:center; letter-spacing:6px; font-size:1.3rem;" />
-    <button class="btn btn-primary" id="btnPinSubmit">Unlock Results</button>
-    <p id="pinError" class="form-error center" role="alert"></p>
-  </section>
 
   <!-- Main dashboard -->
-  <section id="dashboard" hidden>
+  <section id="dashboard">
     <div class="stat-row">
       <div class="stat"><span class="num" id="statVoters">0</span><span class="lbl">Voters so far</span></div>
       <div class="stat"><span class="num" id="statTotal">44</span><span class="lbl">Total attendees</span></div>
@@ -56,7 +48,8 @@
   <!-- Reset confirm modal -->
   <section id="resetModal" class="card deco-frame" hidden>
     <h2 class="display center card-title">Reset All Votes?</h2>
-    <p class="muted center">This permanently clears every vote. Type RESET to confirm.</p>
+    <p class="muted center">This permanently clears every vote. Enter the organiser PIN and type RESET to confirm.</p>
+    <input type="password" id="resetPinInput" class="search-box" placeholder="Organiser PIN" inputmode="numeric" autocomplete="off" />
     <input type="text" id="resetConfirmInput" class="search-box" placeholder="Type RESET" />
     <button class="btn btn-danger" id="btnResetConfirm">Confirm Reset</button>
     <button class="btn btn-secondary" id="btnResetCancel" style="margin-top:10px;">Cancel</button>

@@ -1,8 +1,8 @@
-// Results / organiser dashboard logic.
+// Results dashboard logic.
+// The leaderboard is public (GET /api/votes/results returns totals only — never who voted for
+// whom). Resetting the votes is the one action that still needs the organiser PIN.
 document.addEventListener('DOMContentLoaded', () => {
   initFx();
-  // The organiser PIN is verified by the server (never stored in this public file).
-  let pin = null;
   const AUTO_REFRESH_MS = 20000;
 
   function showError(msg, detail) {
@@ -11,48 +11,8 @@ document.addEventListener('DOMContentLoaded', () => {
   }
   function clearError() { document.getElementById('errorArea').innerHTML = ''; }
 
-  // ---- PIN gate ----
-  document.getElementById('btnPinSubmit').addEventListener('click', unlockWithPin);
-  document.getElementById('pinInput').addEventListener('keydown', e => {
-    if (e.key === 'Enter') unlockWithPin();
-  });
-  async function unlockWithPin() {
-    const input = document.getElementById('pinInput');
-    const btn = document.getElementById('btnPinSubmit');
-    const pinError = document.getElementById('pinError');
-    const val = input.value.trim();
-    if (!val) {
-      pinError.textContent = 'Enter the PIN.';
-      return;
-    }
-    btn.disabled = true;
-    pin = val;
-    const result = await loadAndRender();
-    btn.disabled = false;
-    if (result === 'ok') {
-      pinError.textContent = '';
-      input.value = '';
-      document.getElementById('pinGate').hidden = true;
-      document.getElementById('dashboard').hidden = false;
-      startAutoRefresh();
-    } else if (result === 'auth') {
-      pinError.textContent = 'Incorrect PIN.';
-      input.select();
-    }
-    // 'error' (storage unavailable etc.): the red banner above explains why.
-  }
-
-  // Back to the PIN screen (wrong/changed PIN detected after unlocking).
-  function lockDashboard(message) {
-    pin = null;
-    document.getElementById('dashboard').hidden = true;
-    document.getElementById('resetModal').hidden = true;
-    document.getElementById('pinGate').hidden = false;
-    document.getElementById('pinError').textContent = message;
-  }
-
-  // ---- Core computation ----
-  let lastComputed = null;
+  // ---- Leaderboard ----
+  let lastComputed = null;   // rows from the server: {name, points, firsts, seconds, thirds, place, tied}
 
   function renderLeaderboard(arr, voterCount) {
     document.getElementById('statVoters').textContent = voterCount;
@@ -81,37 +41,24 @@ document.addEventListener('DOMContentLoaded', () => {
 
   let loading = false;
   // silent = background refresh: no "Loading…" flash, keep the old table on failure.
-  // Returns 'ok' | 'auth' (server rejected the PIN) | 'error' | 'busy'.
   async function loadAndRender(silent) {
-    if (loading) return 'busy';
+    if (loading) return;
     loading = true;
     clearError();
     if (!silent) {
       document.getElementById('leaderboardWrap').innerHTML = '<p class="muted center">Loading…</p>';
     }
     try {
-      const state = await VoteStorage.getState(pin);
-      const votes = (state && state.votes) || {};
-      lastComputed = computeLeaderboard(votes);
-      renderLeaderboard(lastComputed, Object.keys(votes).length);
-      return 'ok';
+      const data = await VoteStorage.getResults();
+      lastComputed = Array.isArray(data && data.leaderboard) ? data.leaderboard : [];
+      renderLeaderboard(lastComputed, (data && data.voterCount) || 0);
     } catch (err) {
-      if (err.status === 401 || err.status === 429) {
-        document.getElementById('leaderboardWrap').innerHTML = '';
-        if (document.getElementById('pinGate').hidden) {
-          lockDashboard(err.message);
-        } else {
-          document.getElementById('pinError').textContent = err.message;
-        }
-        return err.status === 401 ? 'auth' : 'error';
-      }
       if (err instanceof StorageUnavailableError) {
         showError('Shared vote storage is unavailable, so results cannot be loaded.', err.detail || 'Check that the shared server backend is running.');
       } else {
         showError('Unexpected error loading results.', err.message);
       }
       if (!silent) document.getElementById('leaderboardWrap').innerHTML = '';
-      return 'error';
     } finally {
       loading = false;
     }
@@ -120,15 +67,11 @@ document.addEventListener('DOMContentLoaded', () => {
   document.getElementById('btnRefresh').addEventListener('click', () => loadAndRender());
 
   // "Live" leaderboard: refresh quietly while the tab is visible.
-  let refreshTimer = null;
-  function startAutoRefresh() {
-    if (refreshTimer) return;
-    refreshTimer = setInterval(() => {
-      if (document.hidden || !pin) return;
-      if (!document.getElementById('resetModal').hidden) return;
-      loadAndRender(true);
-    }, AUTO_REFRESH_MS);
-  }
+  setInterval(() => {
+    if (document.hidden) return;
+    if (!document.getElementById('resetModal').hidden) return;
+    loadAndRender(true);
+  }, AUTO_REFRESH_MS);
 
   // ---- CSV export ----
   document.getElementById('btnExport').addEventListener('click', () => {
@@ -150,35 +93,47 @@ document.addEventListener('DOMContentLoaded', () => {
     setTimeout(() => URL.revokeObjectURL(url), 1000);
   });
 
-  // ---- Reset flow ----
+  // ---- Reset flow (the only action that still needs the organiser PIN) ----
   const resetModal = document.getElementById('resetModal');
   const resetInput = document.getElementById('resetConfirmInput');
+  const resetPinInput = document.getElementById('resetPinInput');
   document.getElementById('btnResetOpen').addEventListener('click', () => {
     resetModal.hidden = false;
     resetInput.value = '';
+    resetPinInput.value = '';
     resetModal.scrollIntoView({ behavior: 'smooth', block: 'center' });
-    resetInput.focus({ preventScroll: true });
+    resetPinInput.focus({ preventScroll: true });
   });
   document.getElementById('btnResetCancel').addEventListener('click', () => {
     resetModal.hidden = true;
   });
-  resetInput.addEventListener('keydown', e => {
+  [resetPinInput, resetInput].forEach(el => el.addEventListener('keydown', e => {
     if (e.key === 'Enter') document.getElementById('btnResetConfirm').click();
-  });
+  }));
   document.getElementById('btnResetConfirm').addEventListener('click', async () => {
     const btn = document.getElementById('btnResetConfirm');
+    const resetPin = resetPinInput.value.trim();
+    if (!resetPin) {
+      showError('Enter the organiser PIN to reset the votes.');
+      return;
+    }
     if (resetInput.value.trim() !== 'RESET') {
       showError('Type RESET exactly to confirm.');
       return;
     }
     btn.disabled = true;
     try {
-      await VoteStorage.resetVotes(pin);
+      await VoteStorage.resetVotes(resetPin);
       resetModal.hidden = true;
+      resetPinInput.value = '';
       loadAndRender();
     } catch (err) {
       if (err instanceof StorageUnavailableError) {
         showError('Shared vote storage is unavailable, so votes could not be reset.', err.detail);
+      } else if (err.status === 401) {
+        showError('Incorrect PIN, so the votes were not reset.');
+      } else if (err.status === 429) {
+        showError('Too many wrong PIN attempts.', err.message);
       } else {
         showError('Unexpected error resetting votes.', err.message);
       }
@@ -199,4 +154,7 @@ document.addEventListener('DOMContentLoaded', () => {
       showError('Your browser blocked the new tab.', 'Allow pop-ups for this site, or open /reveal.html yourself.');
     }
   });
+
+  // ---- Start ----
+  loadAndRender();
 });

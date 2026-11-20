@@ -65,11 +65,15 @@ const VoteStorage = (() => {
     async getConfig() {
       return call('config');
     },
+    // Public (no PIN): leaderboard TOTALS only { leaderboard: [{name, points, firsts, seconds, thirds, place, tied}], voterCount } — never individual ballots.
+    async getResults() {
+      return call('results');
+    },
     // Public (no PIN): only the Top 3 groups [[{name, points, place}, ...tied], ...] in reveal order.
     async getReveal() {
       return call('reveal');
     },
-    // Reading results and resetting require the organiser PIN (checked by the server).
+    // Raw ballots (who voted for whom) and resetting require the organiser PIN (checked by the server).
     async getState(pin) {
       return call('state', { headers: { 'X-Organiser-Pin': pin || '' } });
     },
