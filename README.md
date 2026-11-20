@@ -12,7 +12,7 @@ Sentosa) Best Dressed ranked-choice voting app.
   Already-voted is remembered locally (`localStorage`) AND must be enforced server-side too.
 - `qr.html` — organiser "Show QR" screen. QR generated fully in-browser via `qrcodejs`
   (cdnjs), pointing at `index.html` on the same origin. No external QR API.
-- `results.html` / `results.js` — PIN-gated (`2026`) organiser dashboard: live leaderboard
+- `results.html` / `results.js` — PIN-gated organiser dashboard (PIN checked by the server): live leaderboard
   sorted by points, tie-break by 1st then 2nd place picks (shared place highlighted with a
   dashed outline + "(tie)" label), voter count out of 44, CSV export, dramatic Top 3 reveal
   (3rd → 2nd → 1st, one tap at a time, gold confetti), and a type-RESET-to-confirm vote reset.
@@ -37,11 +37,14 @@ Sentosa) Best Dressed ranked-choice voting app.
 - "One vote per person" is enforced by the backend rejecting a second submit for a name
   already in its `votes` map; the client also remembers locally as a fast UX guard, but the
   source of truth is the server per spec.
-- Backend contract expected by `storage.js` (not implemented as part of this static site,
-  since KAI hosting here is static-files-only): `GET api/votes/state`,
-  `POST api/votes/submit {voter, picks}`, `POST api/votes/reset {confirm:"RESET"}`. If this
-  endpoint isn't present, the app surfaces a clear "shared storage unavailable" error on both
-  the voting and results pages rather than silently using `localStorage` for vote tallies.
+- Backend: `server.js` (zero-dependency Node) serves the site and implements the API that
+  `storage.js` calls: `GET /api/votes/state` and `POST /api/votes/reset` (both require the
+  organiser PIN in an `X-Organiser-Pin` header) and `POST /api/votes/submit {voter, picks}`. The
+  server validates every vote against `data.js` (known voter, 1-3 distinct known picks, no
+  self-vote, one vote per name) and rate-limits wrong PIN guesses. If the API is missing, the
+  app shows a "shared storage unavailable" error rather than silently using `localStorage`.
+- Persistence: votes are stored in `DATA_DIR/votes.json` (atomic writes). On Railway, mount a
+  volume at `/data` and set `DATA_DIR=/data`, otherwise votes are lost on every redeploy.
 
 ## Libraries / CDNs
 - Google Fonts: Playfair Display, Inter.
@@ -51,9 +54,12 @@ Sentosa) Best Dressed ranked-choice voting app.
 
 ## Editing notes
 - Attendee list lives only in `data.js`; edit there and both voter/candidate pickers update.
-- PIN for results is the literal string `'2026'` near the top of `results.js`.
+- Organiser PIN is the `ORGANISER_PIN` environment variable on the server (never stored in the repo).
 - Tie-break logic and place assignment are in `computeLeaderboard()` in `results.js`.
 - Reveal order logic (3rd→2nd→1st) is in the `btnReveal` handler in `results.js`.
+
+## Run locally / deploy
+`ORGANISER_PIN=1234 node server.js` then open http://localhost:3000. On Railway: `npm start`, env `ORGANISER_PIN` + `DATA_DIR=/data`, volume mounted at `/data`.
 
 ## Changelog (most recent first)
 - Light theme (cream background, dark-gold text, cool-grey snow) + bug-fix pass:
@@ -61,4 +67,5 @@ Sentosa) Best Dressed ranked-choice voting app.
   - Results: people with 0 points are no longer shown as "1 (tie)"; duplicate/self/4th picks are ignored defensively; reveal refreshes data, refuses to open with no votes, scrolls to the overlay and disables Next at the end; reset modal scrolls into view; CSV gets a UTF-8 BOM; leaderboard auto-refreshes every 20s.
   - Storage: GETs are never cached; 405/502/503/504 count as "storage unavailable".
   - QR page: graceful fallback if the CDN library is blocked. Added favicon, theme-color, noindex on organiser pages.
+- Added `server.js` backend (PIN-protected results/reset, server-side vote validation, file persistence) + `package.json` for Railway deploy.
 - Initial build: all files created per spec above.

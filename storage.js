@@ -5,9 +5,9 @@
 // show a clear blocking error to the user instead of proceeding.
 //
 // This client expects a same-origin JSON API:
-//   GET  /api/votes/state   -> { votes: { "<voterName>": ["pick1","pick2","pick3"] }, updatedAt }
+//   GET  /api/votes/state   (header X-Organiser-Pin) -> { votes: { "<voterName>": ["pick1","pick2","pick3"] }, updatedAt }
 //   POST /api/votes/submit  body { voter, picks }   -> { ok: true, state }
-//   POST /api/votes/reset   body { confirm: "RESET" } -> { ok: true, state }
+//   POST /api/votes/reset   (header X-Organiser-Pin) body { confirm: "RESET" } -> { ok: true, state }
 // If this endpoint does not exist on the current deployment, all requests
 // will fail (404 / network error) and StorageUnavailableError is surfaced.
 
@@ -26,7 +26,7 @@ const VoteStorage = (() => {
     try {
       res = await fetch(`${BASE}/${path}`, {
         method: opts && opts.method ? opts.method : 'GET',
-        headers: { 'Content-Type': 'application/json' },
+        headers: Object.assign({ 'Content-Type': 'application/json' }, opts && opts.headers),
         body: opts && opts.body ? JSON.stringify(opts.body) : undefined,
         // Never serve vote tallies from the browser cache.
         cache: 'no-store'
@@ -48,6 +48,7 @@ const VoteStorage = (() => {
       }
       const e = new Error(msg);
       e.isServerRejection = true;
+      e.status = res.status;
       throw e;
     }
     let data;
@@ -60,14 +61,15 @@ const VoteStorage = (() => {
   }
 
   return {
-    async getState() {
-      return call('state');
+    // Reading results and resetting require the organiser PIN (checked by the server).
+    async getState(pin) {
+      return call('state', { headers: { 'X-Organiser-Pin': pin || '' } });
     },
     async submitVote(voter, picks) {
       return call('submit', { method: 'POST', body: { voter, picks } });
     },
-    async resetVotes() {
-      return call('reset', { method: 'POST', body: { confirm: 'RESET' } });
+    async resetVotes(pin) {
+      return call('reset', { method: 'POST', headers: { 'X-Organiser-Pin': pin || '' }, body: { confirm: 'RESET' } });
     }
   };
 })();

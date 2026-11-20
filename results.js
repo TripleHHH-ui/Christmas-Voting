@@ -1,7 +1,8 @@
 // Results / organiser dashboard logic.
 document.addEventListener('DOMContentLoaded', () => {
   initFx();
-  const PIN = '2026';
+  // The organiser PIN is verified by the server (never stored in this public file).
+  let pin = null;
   const AUTO_REFRESH_MS = 20000;
 
   function showError(msg, detail) {
@@ -15,19 +16,40 @@ document.addEventListener('DOMContentLoaded', () => {
   document.getElementById('pinInput').addEventListener('keydown', e => {
     if (e.key === 'Enter') unlockWithPin();
   });
-  function unlockWithPin() {
-    const val = document.getElementById('pinInput').value.trim();
-    if (val === PIN) {
-      document.getElementById('pinError').textContent = '';
-      document.getElementById('pinInput').value = '';
+  async function unlockWithPin() {
+    const input = document.getElementById('pinInput');
+    const btn = document.getElementById('btnPinSubmit');
+    const pinError = document.getElementById('pinError');
+    const val = input.value.trim();
+    if (!val) {
+      pinError.textContent = 'Enter the PIN.';
+      return;
+    }
+    btn.disabled = true;
+    pin = val;
+    const result = await loadAndRender();
+    btn.disabled = false;
+    if (result === 'ok') {
+      pinError.textContent = '';
+      input.value = '';
       document.getElementById('pinGate').hidden = true;
       document.getElementById('dashboard').hidden = false;
-      loadAndRender();
       startAutoRefresh();
-    } else {
-      document.getElementById('pinError').textContent = 'Incorrect PIN.';
-      document.getElementById('pinInput').select();
+    } else if (result === 'auth') {
+      pinError.textContent = 'Incorrect PIN.';
+      input.select();
     }
+    // 'error' (storage unavailable etc.): the red banner above explains why.
+  }
+
+  // Back to the PIN screen (wrong/changed PIN detected after unlocking).
+  function lockDashboard(message) {
+    pin = null;
+    document.getElementById('dashboard').hidden = true;
+    document.getElementById('revealOverlay').hidden = true;
+    document.getElementById('resetModal').hidden = true;
+    document.getElementById('pinGate').hidden = false;
+    document.getElementById('pinError').textContent = message;
   }
 
   // ---- Core computation ----
@@ -109,25 +131,37 @@ document.addEventListener('DOMContentLoaded', () => {
 
   let loading = false;
   // silent = background refresh: no "Loading…" flash, keep the old table on failure.
+  // Returns 'ok' | 'auth' (server rejected the PIN) | 'error' | 'busy'.
   async function loadAndRender(silent) {
-    if (loading) return;
+    if (loading) return 'busy';
     loading = true;
     clearError();
     if (!silent) {
       document.getElementById('leaderboardWrap').innerHTML = '<p class="muted center">Loading…</p>';
     }
     try {
-      const state = await VoteStorage.getState();
+      const state = await VoteStorage.getState(pin);
       const votes = (state && state.votes) || {};
       lastComputed = computeLeaderboard(votes);
       renderLeaderboard(lastComputed, Object.keys(votes).length);
+      return 'ok';
     } catch (err) {
+      if (err.status === 401 || err.status === 429) {
+        document.getElementById('leaderboardWrap').innerHTML = '';
+        if (document.getElementById('pinGate').hidden) {
+          lockDashboard(err.message);
+        } else {
+          document.getElementById('pinError').textContent = err.message;
+        }
+        return err.status === 401 ? 'auth' : 'error';
+      }
       if (err instanceof StorageUnavailableError) {
         showError('Shared vote storage is unavailable, so results cannot be loaded.', err.detail || 'Check that the shared server backend is running.');
       } else {
         showError('Unexpected error loading results.', err.message);
       }
       if (!silent) document.getElementById('leaderboardWrap').innerHTML = '';
+      return 'error';
     } finally {
       loading = false;
     }
@@ -140,7 +174,7 @@ document.addEventListener('DOMContentLoaded', () => {
   function startAutoRefresh() {
     if (refreshTimer) return;
     refreshTimer = setInterval(() => {
-      if (document.hidden) return;
+      if (document.hidden || !pin) return;
       if (!document.getElementById('resetModal').hidden) return;
       loadAndRender(true);
     }, AUTO_REFRESH_MS);
@@ -189,7 +223,7 @@ document.addEventListener('DOMContentLoaded', () => {
     }
     btn.disabled = true;
     try {
-      await VoteStorage.resetVotes();
+      await VoteStorage.resetVotes(pin);
       resetModal.hidden = true;
       loadAndRender();
     } catch (err) {

@@ -1,0 +1,13 @@
+{
+  "name": "christmas-voting",
+  "version": "1.0.0",
+  "description": "Golden Hour, Midnight Glamour - Best Dressed ranked-choice voting app",
+  "private": true,
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js"
+  },
+  "engines": {
+    "node": ">=18"
+  }
+}
