@@ -301,13 +301,15 @@ const STATIC = {
   '/results.js': 'results.js',
   '/storage.js': 'storage.js',
   '/style.css': 'style.css',
-  '/emblem.svg': 'emblem.svg'
+  '/emblem.svg': 'emblem.svg',
+  '/live-bg.jpg': 'live-bg.jpg'
 };
 const MIME = {
   '.html': 'text/html; charset=utf-8',
   '.js': 'application/javascript; charset=utf-8',
   '.css': 'text/css; charset=utf-8',
-  '.svg': 'image/svg+xml'
+  '.svg': 'image/svg+xml',
+  '.jpg': 'image/jpeg'
 };
 
 function serveStatic(req, res, pathname) {

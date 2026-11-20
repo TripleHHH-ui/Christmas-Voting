@@ -69,6 +69,7 @@ Sentosa) Best Dressed ranked-choice voting app.
 `ORGANISER_PIN=XXXX node server.js` then open http://localhost:3000. On Railway: `npm start`, env `ORGANISER_PIN` + `DATA_DIR=/data`, volume mounted at `/data`.
 
 ## Changelog (most recent first)
+- Live board: faint festive artwork (`live-bg.jpg`, compressed to 85 KB) behind the card; podium badges are now circles with a smaller rank number than the points below.
 - Live leaderboard is now truly live (server pushes an update the moment a vote is submitted or reset) and Kahoot-style: podium, animated re-ordering, point count-ups, rank-movement arrows, "new vote" / "takes the lead" toasts, LIVE badge, optional full table. Tapping "Remaining" / "Voters so far" lists who has / has not voted (names only, needs the PIN, via `GET /api/votes/voters`).
 - Results page no longer has the "Enter PIN" screen: it reads public totals from `GET /api/votes/results` (individual ballots stay private behind the PIN). "Reset All Votes" still asks for the organiser PIN inside the reset box.
 - Reveal page no longer asks for the PIN. It uses a new public endpoint `GET /api/votes/reveal` that returns only the Top 3 names + points (computed on the server with the shared `scoring.js`); the full results, who-voted-for-whom and reset still need the organiser PIN.

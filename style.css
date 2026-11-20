@@ -545,3 +545,23 @@ h1.display { color: var(--gold-text); }
   .pod-col { transition: none; }
   .pod-crown, .live-dot, .live-toast span, .pod-names.pop span, .lb-row.enter, .lb-row.bump { animation: none !important; }
 }
+
+/* Live board: faint festive artwork behind the card (a cream wash keeps text readable) */
+.live-card {
+  background-image:
+    linear-gradient(rgba(255, 253, 247, 0.84), rgba(255, 253, 247, 0.84)),
+    url('live-bg.jpg');
+  background-size: cover;
+  background-position: center;
+}
+
+/* Podium badge: circle, with a smaller rank number than the points underneath */
+.pod-badge {
+  width: 30px; height: 30px; border-radius: 50%; clip-path: none;
+  font-size: 0.8rem; font-weight: 800;
+  border: 1.5px solid rgba(0, 0, 0, 0.2);
+}
+.pod-pts { font-size: 1.7rem; }
+@media (max-width: 420px) {
+  .pod-pts { font-size: 1.45rem; }
+}
