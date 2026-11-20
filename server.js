@@ -225,12 +225,14 @@ const STATIC = {
   '/fx.js': 'fx.js',
   '/results.js': 'results.js',
   '/storage.js': 'storage.js',
-  '/style.css': 'style.css'
+  '/style.css': 'style.css',
+  '/emblem.svg': 'emblem.svg'
 };
 const MIME = {
   '.html': 'text/html; charset=utf-8',
   '.js': 'application/javascript; charset=utf-8',
-  '.css': 'text/css; charset=utf-8'
+  '.css': 'text/css; charset=utf-8',
+  '.svg': 'image/svg+xml'
 };
 
 function serveStatic(req, res, pathname) {

@@ -25,6 +25,7 @@ Sentosa) Best Dressed ranked-choice voting app.
   `app.js` and `results.js` show a blocking red error banner instead of continuing silently.
 - `fx.js` — shared snow + gold glitter background (`initFx()`) and confetti burst
   (`fireConfetti()`), used by index/qr/results pages.
+- `emblem.svg` — the festive header emblem (gold Art Deco sunburst, three decorated Christmas trees, sparkles), used on every page in place of the old plain fan + emoji.
 - `style.css` — Christmas × Art Deco theme on a light champagne-cream background (dark gold text,
   red accents, deco corner frame + fan motif, ornament-style gold/silver/bronze rank badges,
   Playfair Display for headings.
@@ -66,6 +67,7 @@ Sentosa) Best Dressed ranked-choice voting app.
 `ORGANISER_PIN=XXXX node server.js` then open http://localhost:3000. On Railway: `npm start`, env `ORGANISER_PIN` + `DATA_DIR=/data`, volume mounted at `/data`.
 
 ## Changelog (most recent first)
+- New festive header emblem (`emblem.svg`) on the voting, QR, results and reveal pages.
 - Voting deadline (8:30 PM SGT on 3 Dec 2026): shown on the welcome screen, enforced by the server, configurable via `VOTING_DEADLINE`.
 - Top 3 reveal moved out of the results page into its own full-screen page (`reveal.html`, opens in a new tab); added shared `scoring.js`; reveal ends with a podium and supports Space/→.
 - Light theme (cream background, dark-gold text, cool-grey snow) + bug-fix pass:
