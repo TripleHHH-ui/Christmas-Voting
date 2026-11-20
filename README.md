@@ -16,15 +16,15 @@ Sentosa) Best Dressed ranked-choice voting app.
   sorted by points, tie-break by 1st then 2nd place picks (shared place highlighted with a
   dashed outline + "(tie)" label), voter count out of 44, CSV export, dramatic Top 3 reveal
   (3rd → 2nd → 1st, one tap at a time, gold confetti), and a type-RESET-to-confirm vote reset.
-- `data.js` — the 44-name attendee list (single source of truth for voter + candidate lists).
+- `data.js` — the 44-name attendee list (single source of truth for voter + candidate lists) plus the shared `escapeHtml()` helper.
 - `storage.js` — shared same-origin storage client (`VoteStorage`). Calls a same-origin JSON
   API at `api/votes/{state,submit,reset}`. **By design it never falls back to per-device
   storage** — any network/404/parse failure throws `StorageUnavailableError`, and both
   `app.js` and `results.js` show a blocking red error banner instead of continuing silently.
 - `fx.js` — shared snow + gold glitter background (`initFx()`) and confetti burst
   (`fireConfetti()`), used by index/qr/results pages.
-- `style.css` — Christmas × Art Deco theme: midnight navy background, champagne gold + red
-  accents, deco corner frame + fan motif, ornament-style gold/silver/bronze rank badges,
+- `style.css` — Christmas × Art Deco theme on a light champagne-cream background (dark gold text,
+  red accents, deco corner frame + fan motif, ornament-style gold/silver/bronze rank badges,
   Playfair Display for headings.
 
 ## Design decisions
@@ -56,4 +56,9 @@ Sentosa) Best Dressed ranked-choice voting app.
 - Reveal order logic (3rd→2nd→1st) is in the `btnReveal` handler in `results.js`.
 
 ## Changelog (most recent first)
+- Light theme (cream background, dark-gold text, cool-grey snow) + bug-fix pass:
+  - Voting: "Review Picks" button now shows as soon as the rank screen opens; already-voted phones are blocked instead of just warned; empty ballots can no longer be submitted; added "Not you? Change name"; search boxes reset between steps; hint when trying a 4th pick; keyboard-accessible name cards; localStorage failures no longer break voting; error text is HTML-escaped.
+  - Results: people with 0 points are no longer shown as "1 (tie)"; duplicate/self/4th picks are ignored defensively; reveal refreshes data, refuses to open with no votes, scrolls to the overlay and disables Next at the end; reset modal scrolls into view; CSV gets a UTF-8 BOM; leaderboard auto-refreshes every 20s.
+  - Storage: GETs are never cached; 405/502/503/504 count as "storage unavailable".
+  - QR page: graceful fallback if the CDN library is blocked. Added favicon, theme-color, noindex on organiser pages.
 - Initial build: all files created per spec above.

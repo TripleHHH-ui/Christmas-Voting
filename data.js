@@ -16,3 +16,8 @@ function slugify(name) {
 }
 
 const TOTAL_ATTENDEES = ATTENDEES.length;
+
+// Shared HTML escaper (used by app.js and results.js for anything put in innerHTML).
+function escapeHtml(s) {
+  return String(s == null ? '' : s).replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+}

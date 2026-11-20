@@ -4,6 +4,14 @@ document.addEventListener('DOMContentLoaded', () => {
 
   const LOCAL_VOTED_KEY = 'ghmg_already_voted_name';
 
+  // localStorage can throw (private mode, blocked storage) — never let that break voting.
+  function readVotedName() {
+    try { return localStorage.getItem(LOCAL_VOTED_KEY); } catch (_) { return null; }
+  }
+  function rememberVoted(name) {
+    try { localStorage.setItem(LOCAL_VOTED_KEY, name); } catch (_) { /* server is the source of truth */ }
+  }
+
   const state = {
     voter: null,
     picks: [] // ordered array of names, rank = index+1
@@ -14,23 +22,41 @@ document.addEventListener('DOMContentLoaded', () => {
     steps.forEach(s => {
       document.getElementById('step-' + s).hidden = (s !== name);
     });
+    renderNav();
     window.scrollTo({ top: 0, behavior: 'smooth' });
   }
 
   function showError(msg, detail) {
     const area = document.getElementById('errorArea');
-    area.innerHTML = `<div class="error-banner"><strong>Something's not right</strong>${msg}${detail ? '<br><span class="muted">' + detail + '</span>' : ''}</div>`;
+    area.innerHTML = `<div class="error-banner" role="alert"><strong>Something's not right</strong>${escapeHtml(msg)}${detail ? '<br><span class="muted">' + escapeHtml(detail) + '</span>' : ''}</div>`;
   }
   function clearError() {
     document.getElementById('errorArea').innerHTML = '';
   }
 
+  // Make a div behave like a button for keyboard / screen-reader users.
+  function makeActivatable(el, handler) {
+    el.setAttribute('role', 'button');
+    el.tabIndex = 0;
+    el.addEventListener('click', handler);
+    el.addEventListener('keydown', e => {
+      if (e.key === 'Enter' || e.key === ' ') {
+        e.preventDefault();
+        handler();
+      }
+    });
+  }
+
   // ---- Step 0 ----
   document.getElementById('btnStart').addEventListener('click', () => {
-    const already = localStorage.getItem(LOCAL_VOTED_KEY);
+    const already = readVotedName();
     if (already) {
+      // Block the flow: this phone has already submitted a vote.
       showError(`It looks like "${already}" already voted from this phone.`, 'If this is wrong, please see the organiser.');
+      return;
     }
+    clearError();
+    voterSearch.value = '';
     renderVoterList('');
     showStep('voter');
   });
@@ -47,7 +73,7 @@ document.addEventListener('DOMContentLoaded', () => {
       const card = document.createElement('div');
       card.className = 'name-card';
       card.innerHTML = `<span class="name">${escapeHtml(name)}</span>`;
-      card.addEventListener('click', () => selectVoter(name));
+      makeActivatable(card, () => selectVoter(name));
       voterListEl.appendChild(card);
     });
     if (matches.length === 0) {
@@ -60,15 +86,26 @@ document.addEventListener('DOMContentLoaded', () => {
     state.voter = name;
     state.picks = [];
     clearError();
+    candSearch.value = '';
+    document.getElementById('rankVoter').textContent = `Voting as: ${name}`;
+    document.getElementById('selfNote').hidden = false;
+    document.getElementById('pickHint').textContent = '';
     renderCandList('');
-    const note = document.getElementById('selfNote');
-    note.hidden = false;
     showStep('rank');
   }
+
+  document.getElementById('btnBackToVoter').addEventListener('click', () => {
+    state.voter = null;
+    state.picks = [];
+    voterSearch.value = '';
+    renderVoterList('');
+    showStep('voter');
+  });
 
   // ---- Step 2: rank candidates ----
   const candSearch = document.getElementById('candSearch');
   const candListEl = document.getElementById('candList');
+  const pickHint = document.getElementById('pickHint');
   const RANK_LABELS = ['1st · 3 pts', '2nd · 2 pts', '3rd · 1 pt'];
   const RANK_CLASSES = ['badge-1', 'badge-2', 'badge-3'];
 
@@ -88,8 +125,11 @@ document.addEventListener('DOMContentLoaded', () => {
         badge = `<span class="hint">You can't vote for yourself</span>`;
       }
       card.innerHTML = `<span class="name">${escapeHtml(name)}</span>${badge}`;
-      if (!isSelf) {
-        card.addEventListener('click', () => toggleCandidate(name));
+      if (isSelf) {
+        card.setAttribute('aria-disabled', 'true');
+      } else {
+        makeActivatable(card, () => toggleCandidate(name));
+        card.setAttribute('aria-pressed', pickIdx >= 0 ? 'true' : 'false');
       }
       candListEl.appendChild(card);
     });
@@ -104,9 +144,14 @@ document.addEventListener('DOMContentLoaded', () => {
     const idx = state.picks.indexOf(name);
     if (idx >= 0) {
       state.picks.splice(idx, 1);
+      pickHint.textContent = '';
     } else {
-      if (state.picks.length >= 3) return;
+      if (state.picks.length >= 3) {
+        pickHint.textContent = 'You already have 3 picks — tap one of them to remove it first.';
+        return;
+      }
       state.picks.push(name);
+      pickHint.textContent = '';
     }
     renderCandList(candSearch.value);
   }
@@ -115,14 +160,14 @@ document.addEventListener('DOMContentLoaded', () => {
     const newIdx = idx + dir;
     if (newIdx < 0 || newIdx >= state.picks.length) return;
     [state.picks[idx], state.picks[newIdx]] = [state.picks[newIdx], state.picks[idx]];
-    renderCandList(candSearch.value);
   }
   function removePick(idx) {
     state.picks.splice(idx, 1);
-    renderCandList(candSearch.value);
   }
 
   // ---- Nav area (continue to review) ----
+  // Rendered from showStep() as well, so the button is present as soon as the
+  // rank screen opens (previously it only appeared after the first tap).
   const navArea = document.getElementById('navArea');
   function renderNav() {
     navArea.innerHTML = '';
@@ -137,9 +182,8 @@ document.addEventListener('DOMContentLoaded', () => {
     }
   }
 
-  function goToReview() {
-    const reviewVoter = document.getElementById('reviewVoter');
-    reviewVoter.textContent = `Voting as: ${state.voter}`;
+  function renderReview() {
+    document.getElementById('reviewVoter').textContent = `Voting as: ${state.voter}`;
     const list = document.getElementById('reviewList');
     list.innerHTML = '';
     state.picks.forEach((name, idx) => {
@@ -149,33 +193,50 @@ document.addEventListener('DOMContentLoaded', () => {
         <span class="badge ${RANK_CLASSES[idx]}">${RANK_LABELS[idx]}</span>
         <span class="name">${escapeHtml(name)}</span>
         <div class="ctrls">
-          <button class="icon-btn" data-act="up" ${idx === 0 ? 'disabled' : ''} title="Move up">↑</button>
-          <button class="icon-btn" data-act="down" ${idx === state.picks.length - 1 ? 'disabled' : ''} title="Move down">↓</button>
-          <button class="icon-btn" data-act="remove" title="Remove">✕</button>
+          <button class="icon-btn" data-act="up" ${idx === 0 ? 'disabled' : ''} title="Move up" aria-label="Move ${escapeHtml(name)} up">↑</button>
+          <button class="icon-btn" data-act="down" ${idx === state.picks.length - 1 ? 'disabled' : ''} title="Move down" aria-label="Move ${escapeHtml(name)} down">↓</button>
+          <button class="icon-btn" data-act="remove" title="Remove" aria-label="Remove ${escapeHtml(name)}">✕</button>
         </div>`;
-      row.querySelector('[data-act="up"]').addEventListener('click', () => { movePick(idx, -1); goToReview(); });
-      row.querySelector('[data-act="down"]').addEventListener('click', () => { movePick(idx, 1); goToReview(); });
-      row.querySelector('[data-act="remove"]').addEventListener('click', () => { removePick(idx); goToReview(); });
+      row.querySelector('[data-act="up"]').addEventListener('click', () => { movePick(idx, -1); renderReview(); });
+      row.querySelector('[data-act="down"]').addEventListener('click', () => { movePick(idx, 1); renderReview(); });
+      row.querySelector('[data-act="remove"]').addEventListener('click', () => { removePick(idx); renderReview(); });
       list.appendChild(row);
     });
-    navArea.innerHTML = '';
+    // An empty ballot must never be submittable.
+    const empty = state.picks.length === 0;
+    if (empty) {
+      list.innerHTML = '<p class="muted center">You have no picks left. Go back and choose at least one person.</p>';
+    }
+    document.getElementById('btnSubmit').disabled = empty;
+  }
+
+  function goToReview() {
+    if (state.picks.length === 0) return;
+    clearError();
+    renderReview();
     showStep('review');
   }
 
   document.getElementById('btnBackToRank').addEventListener('click', () => {
+    clearError();
     renderCandList(candSearch.value);
     showStep('rank');
   });
 
   // ---- Step 3: submit ----
+  let submitting = false;
   document.getElementById('btnSubmit').addEventListener('click', async () => {
+    if (submitting || state.picks.length === 0 || !state.voter) return;
+    submitting = true;
     clearError();
     const btn = document.getElementById('btnSubmit');
     btn.disabled = true;
     btn.textContent = 'Submitting…';
+    let ok = false;
     try {
-      await VoteStorage.submitVote(state.voter, state.picks);
-      localStorage.setItem(LOCAL_VOTED_KEY, state.voter);
+      await VoteStorage.submitVote(state.voter, state.picks.slice());
+      ok = true;
+      rememberVoted(state.voter);
       showStep('confirm');
       fireConfetti(document.body, 50);
     } catch (err) {
@@ -187,12 +248,10 @@ document.addEventListener('DOMContentLoaded', () => {
         showError('Unexpected error submitting your vote.', err.message);
       }
     } finally {
-      btn.disabled = false;
+      submitting = false;
       btn.textContent = 'Submit Vote 🎁';
+      // After a successful vote keep the button locked; otherwise let them retry.
+      btn.disabled = ok || state.picks.length === 0;
     }
   });
-
-  function escapeHtml(s) {
-    return s.replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
-  }
 });

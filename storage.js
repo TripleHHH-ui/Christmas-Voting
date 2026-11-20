@@ -27,7 +27,9 @@ const VoteStorage = (() => {
       res = await fetch(`${BASE}/${path}`, {
         method: opts && opts.method ? opts.method : 'GET',
         headers: { 'Content-Type': 'application/json' },
-        body: opts && opts.body ? JSON.stringify(opts.body) : undefined
+        body: opts && opts.body ? JSON.stringify(opts.body) : undefined,
+        // Never serve vote tallies from the browser cache.
+        cache: 'no-store'
       });
     } catch (err) {
       throw new StorageUnavailableError('Network error contacting shared storage: ' + err.message);
@@ -38,8 +40,11 @@ const VoteStorage = (() => {
         const j = await res.json();
         if (j && j.error) msg = j.error;
       } catch (_) { /* ignore */ }
-      if (res.status === 404 || res.status === 501) {
-        throw new StorageUnavailableError('Shared storage endpoint not found (' + res.status + ').');
+      // 404/405/501: no API on this host (static hosts answer POST with 405).
+      // 502-504: backend is down/unreachable behind a proxy.
+      if (res.status === 404 || res.status === 405 || res.status === 501 ||
+          res.status === 502 || res.status === 503 || res.status === 504) {
+        throw new StorageUnavailableError('Shared storage endpoint not available (' + res.status + ').');
       }
       const e = new Error(msg);
       e.isServerRejection = true;

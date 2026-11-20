@@ -8,6 +8,9 @@
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@600;700&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="style.css" />
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns=%27http://www.w3.org/2000/svg%27 viewBox=%270 0 100 100%27%3E%3Ctext y=%27.9em%27 font-size=%2790%27%3E%F0%9F%8E%84%3C/text%3E%3C/svg%3E" />
+<meta name="theme-color" content="#faf5e6" />
+<meta name="robots" content="noindex" />
 </head>
 <body>
 <div class="container wide">
@@ -21,11 +24,11 @@
 
   <!-- PIN gate -->
   <section id="pinGate" class="card deco-frame">
-    <h2 class="display center" style="color:var(--gold-light)">Enter PIN</h2>
+    <h2 class="display center card-title">Enter PIN</h2>
     <p class="muted center">Results are visible to the organiser only.</p>
     <input type="password" id="pinInput" class="search-box center" placeholder="4-digit PIN" inputmode="numeric" maxlength="4" style="text-align:center; letter-spacing:6px; font-size:1.3rem;" />
     <button class="btn btn-primary" id="btnPinSubmit">Unlock Results</button>
-    <p id="pinError" class="muted center" style="color:#ffb3bd;"></p>
+    <p id="pinError" class="form-error center" role="alert"></p>
   </section>
 
   <!-- Main dashboard -->
@@ -44,8 +47,8 @@
     </div>
 
     <div class="card deco-frame">
-      <h2 class="display" style="color:var(--gold-light)">Live Leaderboard</h2>
-      <div id="leaderboardWrap"></div>
+      <h2 class="display card-title">Live Leaderboard</h2>
+      <div id="leaderboardWrap" class="table-scroll"></div>
     </div>
   </section>
 
@@ -64,7 +67,7 @@
 
   <!-- Reset confirm modal -->
   <section id="resetModal" class="card deco-frame" hidden>
-    <h2 class="display center" style="color:var(--gold-light)">Reset All Votes?</h2>
+    <h2 class="display center card-title">Reset All Votes?</h2>
     <p class="muted center">This permanently clears every vote. Type RESET to confirm.</p>
     <input type="text" id="resetConfirmInput" class="search-box" placeholder="Type RESET" />
     <button class="btn btn-danger" id="btnResetConfirm">Confirm Reset</button>
