@@ -563,3 +563,11 @@ h1.display { color: var(--gold-text); }
 @media (max-width: 420px) {
   .pod-pts { font-size: 1.45rem; }
 }
+
+/* Podium alignment: with no votes yet the three pillars are equal height, and the 0s sit on one
+   line (smaller, so they never cover the rank badge above). Filled 2nd/3rd get a little more room. */
+.pod-pts { line-height: 1; }
+.pod:not(.filled) .pod-col { height: 86px; }
+.pod:not(.filled) .pod-pts { font-size: 1.2rem; }
+.pod-2.filled .pod-col { height: 120px; }
+.pod-3.filled .pod-col { height: 98px; }
