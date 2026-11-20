@@ -14,8 +14,10 @@ Sentosa) Best Dressed ranked-choice voting app.
   (cdnjs), pointing at `index.html` on the same origin. No external QR API.
 - `results.html` / `results.js` — PIN-gated organiser dashboard (PIN checked by the server): live leaderboard
   sorted by points, tie-break by 1st then 2nd place picks (shared place highlighted with a
-  dashed outline + "(tie)" label), voter count out of 44, CSV export, dramatic Top 3 reveal
-  (3rd → 2nd → 1st, one tap at a time, gold confetti), and a type-RESET-to-confirm vote reset.
+  dashed outline + "(tie)" label), voter count out of 44, CSV export, a "Launch Top 3 Reveal" button that opens the reveal in a new tab,
+  and a type-RESET-to-confirm vote reset.
+- `reveal.html` / `reveal.js` — full-screen Top 3 reveal page for a projector (opens in its own tab from the results page): 3rd → 2nd → 1st, one tap (button, Space or →) at a time, gold confetti, progress dots, final podium. Gets the PIN from the results tab (sessionStorage) or asks for it.
+- `scoring.js` — shared `computeLeaderboard()` (points, tie-break, places) and `buildRevealQueue()`, used by results and reveal pages.
 - `data.js` — the 44-name attendee list (single source of truth for voter + candidate lists) plus the shared `escapeHtml()` helper.
 - `storage.js` — shared same-origin storage client (`VoteStorage`). Calls a same-origin JSON
   API at `api/votes/{state,submit,reset}`. **By design it never falls back to per-device
@@ -55,13 +57,14 @@ Sentosa) Best Dressed ranked-choice voting app.
 ## Editing notes
 - Attendee list lives only in `data.js`; edit there and both voter/candidate pickers update.
 - Organiser PIN is the `ORGANISER_PIN` environment variable on the server (never stored in the repo).
-- Tie-break logic and place assignment are in `computeLeaderboard()` in `results.js`.
-- Reveal order logic (3rd→2nd→1st) is in the `btnReveal` handler in `results.js`.
+- Tie-break logic and place assignment are in `computeLeaderboard()` in `scoring.js`.
+- Reveal order logic (3rd→2nd→1st) is `buildRevealQueue()` in `scoring.js`; the reveal UI is `reveal.js`.
 
 ## Run locally / deploy
 `ORGANISER_PIN=XXXX node server.js` then open http://localhost:3000. On Railway: `npm start`, env `ORGANISER_PIN` + `DATA_DIR=/data`, volume mounted at `/data`.
 
 ## Changelog (most recent first)
+- Top 3 reveal moved out of the results page into its own full-screen page (`reveal.html`, opens in a new tab); added shared `scoring.js`; reveal ends with a podium and supports Space/→.
 - Light theme (cream background, dark-gold text, cool-grey snow) + bug-fix pass:
   - Voting: "Review Picks" button now shows as soon as the rank screen opens; already-voted phones are blocked instead of just warned; empty ballots can no longer be submitted; added "Not you? Change name"; search boxes reset between steps; hint when trying a 4th pick; keyboard-accessible name cards; localStorage failures no longer break voting; error text is HTML-escaped.
   - Results: people with 0 points are no longer shown as "1 (tie)"; duplicate/self/4th picks are ignored defensively; reveal refreshes data, refuses to open with no votes, scrolls to the overlay and disables Next at the end; reset modal scrolls into view; CSV gets a UTF-8 BOM; leaderboard auto-refreshes every 20s.

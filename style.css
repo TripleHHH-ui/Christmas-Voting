@@ -335,14 +335,6 @@ tr.rank-2 { background: rgba(120,130,150,0.14); }
 tr.rank-3 { background: rgba(176,106,53,0.16); }
 tr.tie { outline: 1px dashed var(--red-light); }
 
-.reveal-stage {
-  text-align: center;
-  padding: 40px 10px;
-  min-height: 260px;
-}
-.reveal-stage .rank-label { font-size: 1.1rem; color: var(--muted); letter-spacing: 2px; text-transform: uppercase; }
-.reveal-stage .winner-name { font-size: 2.2rem; color: var(--gold-text); margin: 12px 0; }
-.reveal-stage .winner-pts { color: var(--ink); }
 
 .confetti {
   position: fixed; inset: 0; pointer-events: none; z-index: 5; overflow: hidden;
@@ -375,7 +367,6 @@ tr.tie { outline: 1px dashed var(--red-light); }
 
 @media (max-width: 420px) {
   .title-block h1 { font-size: 1.4rem; }
-  .reveal-stage .winner-name { font-size: 1.7rem; }
 }
 
 @media (prefers-reduced-motion: reduce) {
@@ -384,3 +375,48 @@ tr.tie { outline: 1px dashed var(--red-light); }
 }
 
 h1.display { color: var(--gold-text); }
+
+/* ---- Reveal page (its own tab / projector screen) ---- */
+.reveal-page {
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 24px 16px 40px;
+  position: relative;
+  z-index: 2;
+  text-align: center;
+}
+.reveal-main { width: 100%; max-width: 1000px; }
+.reveal-gate { width: 100%; max-width: 420px; }
+.reveal-error { width: 100%; max-width: 700px; }
+.reveal-title { font-size: clamp(2rem, 5vw, 3.2rem); margin: 6px 0 2px; }
+.reveal-sub { font-size: 1rem; margin-bottom: 10px; }
+
+.reveal-stage {
+  text-align: center;
+  padding: 36px 10px 16px;
+  min-height: 300px;
+}
+.reveal-stage .rank-label { font-size: clamp(1.1rem, 2.6vw, 1.8rem); color: var(--muted); letter-spacing: 3px; text-transform: uppercase; }
+.reveal-stage .winner-name { font-size: clamp(2.2rem, 8vw, 5.5rem); line-height: 1.1; color: var(--gold-text); margin: 18px 0; overflow-wrap: anywhere; }
+.reveal-stage .winner-pts { font-size: clamp(1.1rem, 2.6vw, 1.8rem); color: var(--ink); }
+
+.dots { display: flex; gap: 10px; justify-content: center; margin: 6px 0 18px; }
+.dot { width: 12px; height: 12px; border-radius: 50%; border: 2px solid var(--gold); background: transparent; transition: background 0.3s; }
+.dot.on { background: var(--gold); }
+
+.reveal-controls { max-width: 360px; margin: 0 auto 14px; }
+.reveal-toolbar { display: flex; gap: 10px; justify-content: center; flex-wrap: wrap; }
+.reveal-hint { font-size: 0.8rem; margin-top: 14px; }
+
+.podium { max-width: 640px; margin: 20px auto 0; display: grid; gap: 10px; }
+.podium-row {
+  display: flex; align-items: center; gap: 12px; text-align: left;
+  background: rgba(255,255,255,0.7);
+  border: 1px solid var(--gold-line);
+  border-radius: 12px;
+  padding: 14px 16px;
+}
+.podium-name { flex: 1; font-weight: 600; font-size: clamp(1.1rem, 3vw, 1.6rem); overflow-wrap: anywhere; }

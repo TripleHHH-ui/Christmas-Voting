@@ -46,7 +46,6 @@ document.addEventListener('DOMContentLoaded', () => {
   function lockDashboard(message) {
     pin = null;
     document.getElementById('dashboard').hidden = true;
-    document.getElementById('revealOverlay').hidden = true;
     document.getElementById('resetModal').hidden = true;
     document.getElementById('pinGate').hidden = false;
     document.getElementById('pinError').textContent = message;
@@ -54,55 +53,6 @@ document.addEventListener('DOMContentLoaded', () => {
 
   // ---- Core computation ----
   let lastComputed = null;
-
-  function computeLeaderboard(votesMap) {
-    const totals = {};
-    ATTENDEES.forEach(n => { totals[n] = { name: n, points: 0, firsts: 0, seconds: 0, thirds: 0 }; });
-    const pointsForRank = [3, 2, 1];
-    Object.entries(votesMap || {}).forEach(([voter, picks]) => {
-      if (!Array.isArray(picks)) return;
-      // Defensive: ignore duplicate picks and self-votes even if the backend let them through.
-      const seen = new Set();
-      let idx = 0;
-      picks.forEach(name => {
-        if (idx > 2 || !totals[name] || name === voter || seen.has(name)) return;
-        seen.add(name);
-        totals[name].points += pointsForRank[idx];
-        if (idx === 0) totals[name].firsts++;
-        else if (idx === 1) totals[name].seconds++;
-        else totals[name].thirds++;
-        idx++;
-      });
-    });
-    const arr = Object.values(totals);
-    arr.sort((a, b) => {
-      if (b.points !== a.points) return b.points - a.points;
-      if (b.firsts !== a.firsts) return b.firsts - a.firsts;
-      if (b.seconds !== a.seconds) return b.seconds - a.seconds;
-      return a.name.localeCompare(b.name);
-    });
-    // Assign places with ties. People with 0 points have not placed at all
-    // (otherwise, before any votes, all 44 would show as "1st (tie)").
-    let place = 0;
-    let prevKey = null;
-    arr.forEach((row, i) => {
-      if (row.points === 0) {
-        row.place = null;
-        return;
-      }
-      const key = `${row.points}-${row.firsts}-${row.seconds}`;
-      if (key !== prevKey) {
-        place = i + 1;
-        prevKey = key;
-      }
-      row.place = place;
-    });
-    // mark ties (share same place with another row)
-    const placeCounts = {};
-    arr.forEach(r => { if (r.place !== null) placeCounts[r.place] = (placeCounts[r.place] || 0) + 1; });
-    arr.forEach(r => { r.tied = r.place !== null && placeCounts[r.place] > 1; });
-    return arr;
-  }
 
   function renderLeaderboard(arr, voterCount) {
     document.getElementById('statVoters').textContent = voterCount;
@@ -237,52 +187,19 @@ document.addEventListener('DOMContentLoaded', () => {
     }
   });
 
-  // ---- Reveal mode ----
-  let revealQueue = [];
-  let revealIdx = -1;
-  const revealOverlay = document.getElementById('revealOverlay');
-  const btnRevealNext = document.getElementById('btnRevealNext');
-
-  document.getElementById('btnReveal').addEventListener('click', async () => {
-    // Use the freshest numbers for the big reveal.
-    await loadAndRender(true);
-    if (!lastComputed) return;
-    const top3 = lastComputed.filter(r => r.place !== null && r.place <= 3);
-    if (top3.length === 0) {
+  // ---- Reveal: opens as its own full-screen page in a new tab ----
+  document.getElementById('btnReveal').addEventListener('click', () => {
+    if (!lastComputed || buildRevealQueue(lastComputed).length === 0) {
       showError('There are no votes yet, so there is nothing to reveal.');
       return;
     }
-    // order: 3rd, 2nd, 1st (by place descending within distinct places present)
-    const places = [...new Set(top3.map(r => r.place))].sort((a, b) => b - a);
-    revealQueue = places.map(p => top3.filter(r => r.place === p));
-    revealIdx = -1;
-    document.getElementById('revealLabel').textContent = 'Get ready…';
-    document.getElementById('revealName').textContent = ' ';
-    document.getElementById('revealPts').textContent = '';
-    btnRevealNext.disabled = false;
-    revealOverlay.hidden = false;
-    revealOverlay.scrollIntoView({ behavior: 'smooth', block: 'center' });
-  });
-
-  btnRevealNext.addEventListener('click', () => {
-    revealIdx++;
-    if (revealIdx >= revealQueue.length) {
-      document.getElementById('revealLabel').textContent = 'That\'s everyone! 🎄';
-      document.getElementById('revealName').textContent = '🎉';
-      document.getElementById('revealPts').textContent = '';
-      btnRevealNext.disabled = true;
-      return;
+    clearError();
+    // Hand the PIN to the new tab (sessionStorage is copied to tabs opened with window.open).
+    // If the browser doesn't copy it, the reveal page simply asks for the PIN itself.
+    try { sessionStorage.setItem('ghmg_organiser_pin', pin); } catch (_) { /* reveal page will ask */ }
+    const tab = window.open('reveal.html', '_blank');
+    if (!tab) {
+      showError('Your browser blocked the new tab.', 'Allow pop-ups for this site, or open /reveal.html yourself.');
     }
-    const group = revealQueue[revealIdx];
-    const place = group[0].place;
-    const label = place === 1 ? '🥇 First Place' : place === 2 ? '🥈 Second Place' : '🥉 Third Place';
-    document.getElementById('revealLabel').textContent = label;
-    document.getElementById('revealName').textContent = group.map(g => g.name).join(' & ');
-    document.getElementById('revealPts').textContent = group[0].points + ' pts' + (group.length > 1 ? ' (tie)' : '');
-    fireConfetti(revealOverlay, 70);
-  });
-
-  document.getElementById('btnRevealClose').addEventListener('click', () => {
-    revealOverlay.hidden = true;
   });
 });

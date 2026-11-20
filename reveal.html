@@ -1,0 +1,61 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Top 3 Reveal — Golden Hour, Midnight Glamour</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@600;700&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="style.css" />
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns=%27http://www.w3.org/2000/svg%27 viewBox=%270 0 100 100%27%3E%3Ctext y=%27.9em%27 font-size=%2790%27%3E%F0%9F%8E%84%3C/text%3E%3C/svg%3E" />
+<meta name="theme-color" content="#faf5e6" />
+<meta name="robots" content="noindex" />
+</head>
+<body>
+<div class="reveal-page">
+
+  <div id="errorArea" class="reveal-error"></div>
+
+  <!-- PIN gate: only shown if the PIN was not handed over from the results page -->
+  <section id="pinGate" class="card deco-frame reveal-gate" hidden>
+    <h2 class="display center card-title">Enter PIN</h2>
+    <p class="muted center">The reveal is for the organiser only.</p>
+    <input type="password" id="pinInput" class="search-box" placeholder="PIN" inputmode="numeric" maxlength="4" autocomplete="off" style="text-align:center; letter-spacing:6px; font-size:1.3rem;" />
+    <button class="btn btn-primary" id="btnPinSubmit">Unlock Reveal</button>
+    <p id="pinError" class="form-error center" role="alert"></p>
+  </section>
+
+  <!-- The reveal stage -->
+  <main id="stage" class="reveal-main" hidden>
+    <div class="fan"></div>
+    <h1 class="display reveal-title">Best Dressed</h1>
+    <div class="reveal-sub muted">Golden Hour, Midnight Glamour</div>
+
+    <div class="reveal-stage">
+      <div class="rank-label" id="revealLabel">Get ready…</div>
+      <div class="winner-name display" id="revealName">&nbsp;</div>
+      <div class="winner-pts" id="revealPts"></div>
+      <div id="podium" class="podium" hidden></div>
+    </div>
+
+    <div class="dots" id="dots" aria-hidden="true"></div>
+
+    <div class="reveal-controls">
+      <button class="btn btn-primary" id="btnRevealNext">Reveal Next 🎄</button>
+    </div>
+    <div class="reveal-toolbar">
+      <button class="btn btn-secondary btn-sm" id="btnRefresh">↻ Refresh results</button>
+      <button class="btn btn-secondary btn-sm" id="btnFullscreen">⛶ Full screen</button>
+      <button class="btn btn-secondary btn-sm" id="btnClose">Close</button>
+    </div>
+    <p class="muted reveal-hint">Tip: press Space or → to reveal the next place.</p>
+  </main>
+</div>
+<script src="data.js"></script>
+<script src="fx.js"></script>
+<script src="storage.js"></script>
+<script src="scoring.js"></script>
+<script src="reveal.js"></script>
+</body>
+</html>
