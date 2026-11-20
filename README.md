@@ -60,10 +60,13 @@ Sentosa) Best Dressed ranked-choice voting app.
 - Tie-break logic and place assignment are in `computeLeaderboard()` in `scoring.js`.
 - Reveal order logic (3rd→2nd→1st) is `buildRevealQueue()` in `scoring.js`; the reveal UI is `reveal.js`.
 
+- Voting deadline: voting closes at `VOTING_DEADLINE` (default `2026-12-03T20:30:00+08:00`, i.e. 8:30 PM Singapore time). The welcome screen shows it, `GET /api/votes/config` exposes it, and `POST /api/votes/submit` returns 403 after it (server clock decides, not the guest's phone). Results/reveal still work afterwards. Change it with the `VOTING_DEADLINE` env var (ISO time with offset).
+
 ## Run locally / deploy
 `ORGANISER_PIN=XXXX node server.js` then open http://localhost:3000. On Railway: `npm start`, env `ORGANISER_PIN` + `DATA_DIR=/data`, volume mounted at `/data`.
 
 ## Changelog (most recent first)
+- Voting deadline (8:30 PM SGT on 3 Dec 2026): shown on the welcome screen, enforced by the server, configurable via `VOTING_DEADLINE`.
 - Top 3 reveal moved out of the results page into its own full-screen page (`reveal.html`, opens in a new tab); added shared `scoring.js`; reveal ends with a podium and supports Space/→.
 - Light theme (cream background, dark-gold text, cool-grey snow) + bug-fix pass:
   - Voting: "Review Picks" button now shows as soon as the rank screen opens; already-voted phones are blocked instead of just warned; empty ballots can no longer be submitted; added "Not you? Change name"; search boxes reset between steps; hint when trying a 4th pick; keyboard-accessible name cards; localStorage failures no longer break voting; error text is HTML-escaped.

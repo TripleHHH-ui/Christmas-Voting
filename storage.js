@@ -61,6 +61,10 @@ const VoteStorage = (() => {
   }
 
   return {
+    // Public: { deadline, deadlineText, closed, serverTime } — when voting closes.
+    async getConfig() {
+      return call('config');
+    },
     // Reading results and resetting require the organiser PIN (checked by the server).
     async getState(pin) {
       return call('state', { headers: { 'X-Organiser-Pin': pin || '' } });

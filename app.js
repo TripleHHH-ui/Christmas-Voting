@@ -47,6 +47,32 @@ document.addEventListener('DOMContentLoaded', () => {
     });
   }
 
+  // ---- Voting deadline ----
+  // The server tells us when voting closes (and enforces it on submit). If it can't be
+  // reached, the static wording in index.html stays and the server still checks on submit.
+  const deadlineNote = document.getElementById('deadlineNote');
+  const btnStart = document.getElementById('btnStart');
+  let deadlineMs = null;
+  let clockSkew = 0; // server time minus this device's clock, so a wrong phone clock doesn't matter
+  function applyClosed() {
+    deadlineNote.innerHTML = '🔒 <strong>Voting is closed.</strong> Thank you for taking part!';
+    btnStart.disabled = true;
+    if (document.getElementById('step-welcome').hidden) {
+      showError('Voting has just closed, so new votes can no longer be submitted.');
+    }
+  }
+  function checkDeadline() {
+    if (deadlineMs !== null && Date.now() + clockSkew > deadlineMs) applyClosed();
+  }
+  VoteStorage.getConfig().then(cfg => {
+    if (!cfg || !cfg.deadline) return;
+    deadlineMs = Date.parse(cfg.deadline);
+    clockSkew = cfg.serverTime ? Date.parse(cfg.serverTime) - Date.now() : 0;
+    if (cfg.deadlineText) document.getElementById('deadlineText').textContent = cfg.deadlineText;
+    if (cfg.closed) applyClosed();
+    else setInterval(checkDeadline, 15000);
+  }).catch(() => { /* keep the static text */ });
+
   // ---- Step 0 ----
   document.getElementById('btnStart').addEventListener('click', () => {
     const already = readVotedName();

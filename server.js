@@ -7,7 +7,8 @@
 //      POST /api/votes/reset    { confirm: "RESET" }      (organiser PIN required)
 //  - Persists votes to DATA_DIR/votes.json (mount a Railway volume there).
 //
-// Env vars: PORT (set by Railway), DATA_DIR (default ./data), ORGANISER_PIN (default 2026).
+// Env vars: PORT (set by Railway), DATA_DIR (default ./data), ORGANISER_PIN (default 2026),
+//           VOTING_DEADLINE (ISO time with offset, default 2026-12-03T20:30:00+08:00 = 8:30 PM Singapore).
 
 const http = require('http');
 const fs = require('fs');
@@ -20,6 +21,16 @@ const DATA_DIR = process.env.DATA_DIR || path.join(__dirname, 'data');
 const VOTES_FILE = path.join(DATA_DIR, 'votes.json');
 const ORGANISER_PIN = String(process.env.ORGANISER_PIN || '2026');
 const MAX_BODY_BYTES = 10 * 1024;
+
+// Voting closes at this moment (server clock is authoritative). An unparseable value means "never closes".
+const VOTING_DEADLINE = new Date(process.env.VOTING_DEADLINE || '2026-12-03T20:30:00+08:00');
+if (isNaN(VOTING_DEADLINE.getTime())) console.warn('WARNING: VOTING_DEADLINE is not a valid date; voting will never close.');
+function votingClosed() { return !isNaN(VOTING_DEADLINE.getTime()) && Date.now() > VOTING_DEADLINE.getTime(); }
+function deadlineText() {
+  try {
+    return VOTING_DEADLINE.toLocaleString('en-SG', { timeZone: 'Asia/Singapore', day: 'numeric', month: 'short', year: 'numeric', hour: 'numeric', minute: '2-digit', hour12: true }) + ' (Singapore time)';
+  } catch (_) { return VOTING_DEADLINE.toISOString(); }
+}
 
 if (!process.env.ORGANISER_PIN) {
   console.warn('WARNING: ORGANISER_PIN is not set, falling back to the default PIN.');
@@ -159,7 +170,21 @@ async function handleApi(req, res, op) {
     return sendJson(res, 200, { votes: store.votes, updatedAt: store.updatedAt });
   }
 
+  // Public: lets the voting page show the deadline / closed state (server clock is the truth).
+  if (op === 'config' && req.method === 'GET') {
+    const valid = !isNaN(VOTING_DEADLINE.getTime());
+    return sendJson(res, 200, {
+      deadline: valid ? VOTING_DEADLINE.toISOString() : null,
+      deadlineText: valid ? deadlineText() : null,
+      closed: votingClosed(),
+      serverTime: new Date().toISOString()
+    });
+  }
+
   if (op === 'submit' && req.method === 'POST') {
+    if (votingClosed()) {
+      return sendJson(res, 403, { error: `Voting has closed (it ended at ${deadlineText()}). Your vote was not recorded.`, closed: true });
+    }
     const body = await readJsonBody(req);
     const err = validateSubmission(body);
     if (err) return sendJson(res, 400, { error: err });
@@ -180,7 +205,7 @@ async function handleApi(req, res, op) {
     return sendJson(res, 200, { ok: true });
   }
 
-  if (op === 'state' || op === 'submit' || op === 'reset') {
+  if (op === 'state' || op === 'submit' || op === 'reset' || op === 'config') {
     return sendJson(res, 405, { error: 'Method not allowed.' });
   }
   return sendJson(res, 404, { error: 'Not found.' });
